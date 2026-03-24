@@ -1,0 +1,250 @@
+<template>
+	<xn-panel>
+		<a-form ref="searchFormRef" :model="searchFormState">
+			<a-row :gutter="10">
+				<a-col :xs="24" :sm="24" :md="24" :lg="6" :xl="6">
+					<a-form-item label="标题" name="title">
+						<a-input v-model:value="searchFormState.title" placeholder="请输入标题" allow-clear />
+					</a-form-item>
+				</a-col>
+				<a-col :xs="24" :sm="24" :md="24" :lg="6" :xl="6">
+					<a-form-item label="分类" name="categoryId">
+						<a-tree-select
+							v-model:value="searchFormState.categoryId"
+							placeholder="请选择分类"
+							allow-clear
+							:tree-data="categoryTreeData"
+							:field-names="treeFieldNames"
+							tree-line
+						/>
+					</a-form-item>
+				</a-col>
+				<a-col :xs="24" :sm="24" :md="24" :lg="6" :xl="6">
+					<a-form-item label="标签" name="tagId">
+						<a-select v-model:value="searchFormState.tagId" placeholder="请选择标签" allow-clear :options="tagOptions" />
+					</a-form-item>
+				</a-col>
+				<a-col :xs="24" :sm="24" :md="24" :lg="6" :xl="6" v-show="advanced">
+					<a-form-item label="状态" name="status">
+						<a-select v-model:value="searchFormState.status" placeholder="请选择状态" :options="statusOptions" />
+					</a-form-item>
+				</a-col>
+				<a-col :xs="24" :sm="24" :md="24" :lg="6" :xl="6" v-show="advanced">
+					<a-form-item label="创建时间" name="createTime">
+						<a-range-picker v-model:value="searchFormState.createTime" value-format="YYYY-MM-DD" show-time />
+					</a-form-item>
+				</a-col>
+				<a-col :xs="24" :sm="24" :md="24" :lg="6" :xl="6">
+					<a-form-item>
+						<a-space>
+							<a-button type="primary" @click="tableRef.refresh(true)">
+								<template #icon><SearchOutlined /></template>
+								查询
+							</a-button>
+							<a-button @click="reset">
+								<template #icon><RedoOutlined /></template>
+								重置
+							</a-button>
+							<a @click="toggleAdvanced">
+								{{ advanced ? '收起' : '展开' }}
+								<component :is="advanced ? 'UpOutlined' : 'DownOutlined'" />
+							</a>
+						</a-space>
+					</a-form-item>
+				</a-col>
+			</a-row>
+		</a-form>
+		<s-table
+			ref="tableRef"
+			:columns="columns"
+			:data="loadData"
+			:alert="options.alert.show"
+			bordered
+			:row-key="(record) => record.id"
+			:tool-config="toolConfig"
+			:row-selection="options.rowSelection"
+			:scroll="{ x: 'max-content' }"
+		>
+			<template #operator>
+				<a-space>
+					<a-button type="primary" @click="formRef.onOpen()" v-if="hasPerm('bizArticleAdd')">
+						<template #icon><PlusOutlined /></template>
+						新增
+					</a-button>
+					<xn-batch-button
+						v-if="hasPerm('bizArticleBatchDelete')"
+						buttonName="批量删除"
+						icon="DeleteOutlined"
+						buttonDanger
+						:selectedRowKeys="selectedRowKeys"
+						@batchCallBack="deleteBatchBizArticle"
+					/>
+				</a-space>
+			</template>
+			<template #bodyCell="{ column, record }">
+				<template v-if="column.dataIndex === 'coverImage'">
+					<a-image v-if="record.coverImage" :src="record.coverImage" style="width: 60px; height: 60px" />
+					<span v-else>无封面</span>
+				</template>
+				<template v-if="column.dataIndex === 'categoryName'">
+					<a-tag color="blue">{{ record.categoryName }}</a-tag>
+				</template>
+				<template v-if="column.dataIndex === 'tags'">
+					<a-tag v-for="tag in JSON.parse(record.tags || '[]')" :key="tag" color="green">
+						{{ tag }}
+					</a-tag>
+				</template>
+				<template v-if="column.dataIndex === 'status'">
+					<a-switch
+						:loading="loading"
+						:checked="record.status === 'ENABLE'"
+						@change="editStatus(record)"
+						v-if="hasPerm('bizArticleUpdateStatus')"
+					/>
+					<span v-else>{{ $TOOL.dictTypeData('COMMON_STATUS', record.status) }}</span>
+				</template>
+				<template v-if="column.dataIndex === 'action'">
+					<a-space>
+						<a @click="formRef.onOpen(record)" v-if="hasPerm('bizArticleEdit')">编辑</a>
+						<a-divider type="vertical" v-if="hasPerm(['bizArticleEdit', 'bizArticleDelete'], 'and')" />
+						<a-popconfirm title="确定要删除吗？" @confirm="deleteBizArticle(record)">
+							<a-button type="link" danger size="small" v-if="hasPerm('bizArticleDelete')">删除</a-button>
+						</a-popconfirm>
+					</a-space>
+				</template>
+			</template>
+		</s-table>
+	</xn-panel>
+	<Form ref="formRef" @successful="tableRef.refresh()" />
+</template>
+
+<script setup name="bizArticle">
+	import tool from '@/utils/tool'
+	import { cloneDeep } from 'lodash-es'
+	import Form from './form.vue'
+	import bizArticleApi from '@/api/biz/bizArticleApi'
+	import bizCategoryApi from '@/api/biz/bizCategoryApi'
+	import bizTagApi from '@/api/biz/bizTagApi'
+
+	const searchFormState = ref({})
+	const searchFormRef = ref()
+	const tableRef = ref()
+	const formRef = ref()
+	const toolConfig = { refresh: true, height: true, columnSetting: true, striped: false }
+	const loading = ref(false)
+	const advanced = ref(false)
+	const categoryTreeData = ref([])
+	const tagOptions = ref([])
+	const treeFieldNames = { children: 'children', title: 'name', key: 'id', value: 'id' }
+
+	const toggleAdvanced = () => {
+		advanced.value = !advanced.value
+	}
+
+	const columns = [
+		{ title: '标题', dataIndex: 'title', ellipsis: true },
+		{ title: '封面图', dataIndex: 'coverImage' },
+		{ title: '分类', dataIndex: 'categoryName' },
+		{ title: '标签', dataIndex: 'tags' },
+		{ title: '作者', dataIndex: 'author', ellipsis: true },
+		{ title: '阅读量', dataIndex: 'viewCount', sorter: true },
+		{ title: '排序', dataIndex: 'sortCode', sorter: true },
+		{ title: '状态', dataIndex: 'status' },
+		{ title: '创建时间', dataIndex: 'createTime' }
+	]
+
+	if (hasPerm(['bizArticleEdit', 'bizArticleDelete'])) {
+		columns.push({
+			title: '操作',
+			dataIndex: 'action',
+			align: 'center',
+			fixed: 'right'
+		})
+	}
+
+	const selectedRowKeys = ref([])
+	const options = {
+		alert: {
+			show: false,
+			clear: () => {
+				selectedRowKeys.value = ref([])
+			}
+		},
+		rowSelection: {
+			onChange: (selectedRowKey, selectedRows) => {
+				selectedRowKeys.value = selectedRowKey
+			}
+		}
+	}
+
+	const loadData = (parameter) => {
+		const searchFormParam = cloneDeep(searchFormState.value)
+		if (searchFormParam.createTime) {
+			searchFormParam.startCreateTime = searchFormParam.createTime[0]
+			searchFormParam.endCreateTime = searchFormParam.createTime[1]
+			delete searchFormParam.createTime
+		}
+		return bizArticleApi.articlePage(Object.assign(parameter, searchFormParam)).then((data) => {
+			return data
+		})
+	}
+
+	const reset = () => {
+		searchFormRef.value.resetFields()
+		tableRef.value.refresh(true)
+	}
+
+	const deleteBizArticle = (record) => {
+		let params = [{ id: record.id }]
+		bizArticleApi.articleDelete(params).then(() => {
+			tableRef.value.refresh(true)
+		})
+	}
+
+	const deleteBatchBizArticle = (params) => {
+		bizArticleApi.articleDelete(params).then(() => {
+			tableRef.value.clearRefreshSelected()
+		})
+	}
+
+	const editStatus = (record) => {
+		loading.value = true
+		if (record.status === 'ENABLE') {
+			bizArticleApi.articleDisableStatus(record).finally(() => {
+				tableRef.value.refresh()
+				loading.value = false
+			})
+		} else {
+			bizArticleApi.articleEnableStatus(record).finally(() => {
+				tableRef.value.refresh()
+				loading.value = false
+			})
+		}
+	}
+
+	const loadCategoryTree = () => {
+		bizCategoryApi.categoryTree().then((res) => {
+			if (res) {
+				categoryTreeData.value = res
+			}
+		})
+	}
+
+	const loadTagList = () => {
+		bizTagApi.tagList().then((res) => {
+			if (res) {
+				tagOptions.value = res.map((item) => ({
+					value: item.id,
+					label: item.name
+				}))
+			}
+		})
+	}
+
+	const statusOptions = tool.dictList('COMMON_STATUS')
+
+	onMounted(() => {
+		loadCategoryTree()
+		loadTagList()
+	})
+</script>
