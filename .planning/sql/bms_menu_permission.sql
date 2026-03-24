@@ -24,11 +24,17 @@ SET @BIZ_MODULE_ID = '1548901111999773976';
 -- -----------------------------------------------------------
 INSERT INTO `sys_resource` (
     `ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, 
-    `PATH`, `COMPONENT`, `ICON`, `SORT_CODE`, `STATUS`
+    `PATH`, `COMPONENT`, `ICON`, `CODE`, `SORT_CODE`, `VISIBLE`, `DELETE_FLAG`
 ) VALUES (
     '1801000000000000001', '博客管理', 'MENU', 'CATALOG', '0', @BIZ_MODULE_ID,
-    '/biz', 'Layout', 'read-outlined', 100, 'ENABLE'
-) ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
+    '/biz', NULL, 'read-outlined', 'bms_blog_manage', 60, 'TRUE', 'NOT_DELETE'
+) ON DUPLICATE KEY UPDATE 
+    TITLE = VALUES(TITLE), 
+    CODE = VALUES(CODE), 
+    VISIBLE = VALUES(VISIBLE), 
+    SORT_CODE = VALUES(SORT_CODE),
+    COMPONENT = VALUES(COMPONENT),
+    DELETE_FLAG = VALUES(DELETE_FLAG);
 
 -- -----------------------------------------------------------
 -- 1.2 二级菜单
@@ -37,47 +43,72 @@ INSERT INTO `sys_resource` (
 -- 文章管理
 INSERT INTO `sys_resource` (
     `ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`,
-    `PATH`, `COMPONENT`, `ICON`, `SORT_CODE`, `STATUS`
+    `PATH`, `COMPONENT`, `ICON`, `CODE`, `SORT_CODE`, `VISIBLE`, `DELETE_FLAG`
 ) VALUES (
     '1801000000000000002', '文章管理', 'MENU', 'MENU', '1801000000000000001', @BIZ_MODULE_ID,
-    '/biz/article', 'biz/article/index', 'file-text-outlined', 1, 'ENABLE'
-) ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
+    '/biz/article', 'biz/article/index', 'file-text-outlined', 'bms_article', 1, 'TRUE', 'NOT_DELETE'
+) ON DUPLICATE KEY UPDATE 
+    TITLE = VALUES(TITLE), 
+    CODE = VALUES(CODE), 
+    VISIBLE = VALUES(VISIBLE),
+    SORT_CODE = VALUES(SORT_CODE),
+    DELETE_FLAG = VALUES(DELETE_FLAG);
 
 -- 分类管理
 INSERT INTO `sys_resource` (
     `ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`,
-    `PATH`, `COMPONENT`, `ICON`, `SORT_CODE`, `STATUS`
+    `PATH`, `COMPONENT`, `ICON`, `CODE`, `SORT_CODE`, `VISIBLE`, `DELETE_FLAG`
 ) VALUES (
     '1801000000000000003', '分类管理', 'MENU', 'MENU', '1801000000000000001', @BIZ_MODULE_ID,
-    '/biz/category', 'biz/category/index', 'folder-outlined', 2, 'ENABLE'
-) ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
+    '/biz/category', 'biz/category/index', 'folder-outlined', 'bms_category', 2, 'TRUE', 'NOT_DELETE'
+) ON DUPLICATE KEY UPDATE 
+    TITLE = VALUES(TITLE), 
+    CODE = VALUES(CODE), 
+    VISIBLE = VALUES(VISIBLE),
+    SORT_CODE = VALUES(SORT_CODE),
+    DELETE_FLAG = VALUES(DELETE_FLAG);
 
 -- 标签管理
 INSERT INTO `sys_resource` (
     `ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`,
-    `PATH`, `COMPONENT`, `ICON`, `SORT_CODE`, `STATUS`
+    `PATH`, `COMPONENT`, `ICON`, `CODE`, `SORT_CODE`, `VISIBLE`, `DELETE_FLAG`
 ) VALUES (
     '1801000000000000004', '标签管理', 'MENU', 'MENU', '1801000000000000001', @BIZ_MODULE_ID,
-    '/biz/tag', 'biz/tag/index', 'tags-outlined', 3, 'ENABLE'
-) ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
+    '/biz/tag', 'biz/tag/index', 'tags-outlined', 'bms_tag', 3, 'TRUE', 'NOT_DELETE'
+) ON DUPLICATE KEY UPDATE 
+    TITLE = VALUES(TITLE), 
+    CODE = VALUES(CODE), 
+    VISIBLE = VALUES(VISIBLE),
+    SORT_CODE = VALUES(SORT_CODE),
+    DELETE_FLAG = VALUES(DELETE_FLAG);
 
 -- 评论管理
 INSERT INTO `sys_resource` (
     `ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`,
-    `PATH`, `COMPONENT`, `ICON`, `SORT_CODE`, `STATUS`
+    `PATH`, `COMPONENT`, `ICON`, `CODE`, `SORT_CODE`, `VISIBLE`, `DELETE_FLAG`
 ) VALUES (
     '1801000000000000005', '评论管理', 'MENU', 'MENU', '1801000000000000001', @BIZ_MODULE_ID,
-    '/biz/comment', 'biz/comment/index', 'message-outlined', 4, 'ENABLE'
-) ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
+    '/biz/comment', 'biz/comment/index', 'message-outlined', 'bms_comment', 4, 'TRUE', 'NOT_DELETE'
+) ON DUPLICATE KEY UPDATE 
+    TITLE = VALUES(TITLE), 
+    CODE = VALUES(CODE), 
+    VISIBLE = VALUES(VISIBLE),
+    SORT_CODE = VALUES(SORT_CODE),
+    DELETE_FLAG = VALUES(DELETE_FLAG);
 
 -- 媒体管理
 INSERT INTO `sys_resource` (
     `ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`,
-    `PATH`, `COMPONENT`, `ICON`, `SORT_CODE`, `STATUS`
+    `PATH`, `COMPONENT`, `ICON`, `CODE`, `SORT_CODE`, `VISIBLE`, `DELETE_FLAG`
 ) VALUES (
     '1801000000000000006', '媒体管理', 'MENU', 'MENU', '1801000000000000001', @BIZ_MODULE_ID,
-    '/biz/media', 'biz/media/index', 'picture-outlined', 5, 'ENABLE'
-) ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
+    '/biz/media', 'biz/media/index', 'picture-outlined', 'bms_media', 5, 'TRUE', 'NOT_DELETE'
+) ON DUPLICATE KEY UPDATE 
+    TITLE = VALUES(TITLE), 
+    CODE = VALUES(CODE), 
+    VISIBLE = VALUES(VISIBLE),
+    SORT_CODE = VALUES(SORT_CODE),
+    DELETE_FLAG = VALUES(DELETE_FLAG);
 
 -- ============================================================
 -- 2. 按钮资源配置 (sys_resource, CATEGORY='BUTTON')
@@ -86,56 +117,56 @@ INSERT INTO `sys_resource` (
 -- -----------------------------------------------------------
 -- 2.1 文章管理按钮
 -- -----------------------------------------------------------
-INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`, `STATUS`) VALUES
-('1801010000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:add', 1, 'ENABLE'),
-('1801010000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:edit', 2, 'ENABLE'),
-('1801010000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:delete', 3, 'ENABLE'),
-('1801010000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:detail', 4, 'ENABLE'),
-('1801010000000000005', '发布', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:publish', 5, 'ENABLE'),
-('1801010000000000006', '取消发布', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:unpublish', 6, 'ENABLE')
+INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`) VALUES
+('1801010000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:add', 1),
+('1801010000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:edit', 2),
+('1801010000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:delete', 3),
+('1801010000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:detail', 4),
+('1801010000000000005', '发布', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:publish', 5),
+('1801010000000000006', '取消发布', 'BUTTON', 'BUTTON', '1801000000000000002', @BIZ_MODULE_ID, 'biz:article:unpublish', 6)
 ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
 
 -- -----------------------------------------------------------
 -- 2.2 分类管理按钮
 -- -----------------------------------------------------------
-INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`, `STATUS`) VALUES
-('1801020000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:add', 1, 'ENABLE'),
-('1801020000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:edit', 2, 'ENABLE'),
-('1801020000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:delete', 3, 'ENABLE'),
-('1801020000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:detail', 4, 'ENABLE'),
-('1801020000000000005', '启用', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:enableStatus', 5, 'ENABLE'),
-('1801020000000000006', '禁用', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:disableStatus', 6, 'ENABLE')
+INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`) VALUES
+('1801020000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:add', 1),
+('1801020000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:edit', 2),
+('1801020000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:delete', 3),
+('1801020000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:detail', 4),
+('1801020000000000005', '启用', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:enableStatus', 5),
+('1801020000000000006', '禁用', 'BUTTON', 'BUTTON', '1801000000000000003', @BIZ_MODULE_ID, 'biz:category:disableStatus', 6)
 ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
 
 -- -----------------------------------------------------------
 -- 2.3 标签管理按钮
 -- -----------------------------------------------------------
-INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`, `STATUS`) VALUES
-('1801030000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:add', 1, 'ENABLE'),
-('1801030000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:edit', 2, 'ENABLE'),
-('1801030000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:delete', 3, 'ENABLE'),
-('1801030000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:detail', 4, 'ENABLE')
+INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`) VALUES
+('1801030000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:add', 1),
+('1801030000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:edit', 2),
+('1801030000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:delete', 3),
+('1801030000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000004', @BIZ_MODULE_ID, 'biz:tag:detail', 4)
 ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
 
 -- -----------------------------------------------------------
 -- 2.4 评论管理按钮
 -- -----------------------------------------------------------
-INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`, `STATUS`) VALUES
-('1801040000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:add', 1, 'ENABLE'),
-('1801040000000000002', '删除', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:delete', 2, 'ENABLE'),
-('1801040000000000003', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:detail', 3, 'ENABLE'),
-('1801040000000000004', '通过', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:approve', 4, 'ENABLE'),
-('1801040000000000005', '拒绝', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:reject', 5, 'ENABLE')
+INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`) VALUES
+('1801040000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:add', 1),
+('1801040000000000002', '删除', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:delete', 2),
+('1801040000000000003', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:detail', 3),
+('1801040000000000004', '通过', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:approve', 4),
+('1801040000000000005', '拒绝', 'BUTTON', 'BUTTON', '1801000000000000005', @BIZ_MODULE_ID, 'biz:comment:reject', 5)
 ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
 
 -- -----------------------------------------------------------
 -- 2.5 媒体管理按钮
 -- -----------------------------------------------------------
-INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`, `STATUS`) VALUES
-('1801050000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:add', 1, 'ENABLE'),
-('1801050000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:edit', 2, 'ENABLE'),
-('1801050000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:delete', 3, 'ENABLE'),
-('1801050000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:detail', 4, 'ENABLE')
+INSERT INTO `sys_resource` (`ID`, `TITLE`, `CATEGORY`, `MENU_TYPE`, `PARENT_ID`, `MODULE`, `CODE`, `SORT_CODE`) VALUES
+('1801050000000000001', '新增', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:add', 1),
+('1801050000000000002', '编辑', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:edit', 2),
+('1801050000000000003', '删除', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:delete', 3),
+('1801050000000000004', '查看详情', 'BUTTON', 'BUTTON', '1801000000000000006', @BIZ_MODULE_ID, 'biz:media:detail', 4)
 ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
 
 -- ============================================================
@@ -145,14 +176,14 @@ ON DUPLICATE KEY UPDATE TITLE = VALUES(TITLE);
 -- 为超级管理员分配所有菜单和按钮权限
 INSERT INTO `sys_relation` (`ID`, `OBJECT_ID`, `TARGET_ID`, `CATEGORY`, `EXT_JSON`)
 SELECT 
-    CONCAT('1802000000000', SUBSTRING(`ID`, 7)),
+    CONCAT('1802', SUBSTRING(r.`ID`, 5)),
     @SUPER_ADMIN_ROLE_ID,
-    `ID`,
+    r.`ID`,
     'SYS_ROLE_HAS_RESOURCE',
-    JSON_OBJECT('menuId', `ID`, 'buttonInfo', JSON_ARRAY())
-FROM `sys_resource` 
-WHERE `ID` LIKE '1801%'
-ON DUPLICATE KEY UPDATE ID = ID;
+    JSON_OBJECT('menuId', r.`ID`, 'buttonInfo', JSON_ARRAY())
+FROM `sys_resource` r
+WHERE r.`ID` LIKE '1801%'
+ON DUPLICATE KEY UPDATE `ID` = VALUES(`ID`);
 
 -- ============================================================
 -- 4. API权限配置 (SYS_RELATION - SYS_ROLE_HAS_PERMISSION)
