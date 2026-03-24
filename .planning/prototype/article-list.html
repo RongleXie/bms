@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章管理 - 博客管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; }
+        
+        /* 布局 */
+        .layout { display: flex; min-height: 100vh; }
+        
+        /* 侧边栏 */
+        .sidebar { width: 220px; background: #001529; color: #fff; flex-shrink: 0; }
+        .logo { height: 64px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); font-size: 18px; font-weight: bold; }
+        .menu { padding: 16px 0; }
+        .menu-item { padding: 12px 24px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.65); transition: all 0.3s; }
+        .menu-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .menu-item.active { background: #1890ff; color: #fff; }
+        .menu-group { padding: 8px 24px; color: rgba(255,255,255,0.4); font-size: 12px; margin-top: 8px; }
+        
+        /* 主内容区 */
+        .main { flex: 1; display: flex; flex-direction: column; }
+        
+        /* 顶部栏 */
+        .header { height: 64px; background: #fff; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .breadcrumb { color: #666; font-size: 14px; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #1890ff; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
+        
+        /* 内容区 */
+        .content { padding: 24px; flex: 1; }
+        
+        /* 搜索栏 */
+        .search-bar { background: #fff; padding: 24px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .search-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+        .form-item { display: flex; flex-direction: column; gap: 8px; }
+        .form-item label { font-size: 14px; color: #333; }
+        .form-item input, .form-item select { height: 32px; padding: 0 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; min-width: 200px; }
+        .form-item input:focus, .form-item select:focus { outline: none; border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+        
+        /* 按钮 */
+        .btn { height: 32px; padding: 0 16px; border-radius: 4px; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; }
+        .btn-primary { background: #1890ff; color: #fff; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-default { background: #fff; border: 1px solid #d9d9d9; color: #333; }
+        .btn-default:hover { border-color: #1890ff; color: #1890ff; }
+        .btn-danger { background: #ff4d4f; color: #fff; }
+        .btn-danger:hover { background: #ff7875; }
+        .btn-success { background: #52c41a; color: #fff; }
+        .btn-success:hover { background: #73d13d; }
+        
+        /* 表格区 */
+        .table-container { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .table-header { padding: 16px 24px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .table-title { font-size: 16px; font-weight: 500; }
+        .table-toolbar { display: flex; gap: 8px; }
+        
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 16px 24px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background: #fafafa; font-weight: 500; color: #333; }
+        td { color: #666; }
+        tr:hover { background: #fafafa; }
+        
+        /* 标签 */
+        .tag { padding: 2px 8px; border-radius: 4px; font-size: 12px; display: inline-block; }
+        .tag-success { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .tag-warning { background: #fffbe6; color: #faad14; border: 1px solid #ffe58f; }
+        .tag-default { background: #f5f5f5; color: #666; border: 1px solid #d9d9d9; }
+        .tag-blue { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+        
+        /* 操作按钮 */
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn { color: #1890ff; cursor: pointer; font-size: 14px; }
+        .action-btn:hover { color: #40a9ff; }
+        .action-btn.danger { color: #ff4d4f; }
+        .action-btn.danger:hover { color: #ff7875; }
+        
+        /* 分页 */
+        .pagination { padding: 16px 24px; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+        .pagination span { color: #666; font-size: 14px; }
+        .page-btn { width: 32px; height: 32px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .page-btn:hover { border-color: #1890ff; color: #1890ff; }
+        .page-btn.active { background: #1890ff; color: #fff; border-color: #1890ff; }
+        
+        /* 图标 SVG */
+        .icon { width: 16px; height: 16px; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="logo">📊 BMS 博客管理</div>
+            <div class="menu">
+                <div class="menu-group">内容管理</div>
+                <div class="menu-item active">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    文章管理
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
+                    分类标签
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>
+                    评论管理
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    媒体库
+                </div>
+                <div class="menu-group">系统管理</div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    用户管理
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                    角色管理
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                    系统配置
+                </div>
+            </div>
+        </div>
+        
+        <!-- 主内容 -->
+        <div class="main">
+            <div class="header">
+                <div class="header-left">
+                    <span class="breadcrumb">首页 / 内容管理 / 文章管理</span>
+                </div>
+                <div class="header-right">
+                    <span>管理员</span>
+                    <div class="avatar">A</div>
+                </div>
+            </div>
+            
+            <div class="content">
+                <!-- 搜索栏 -->
+                <div class="search-bar">
+                    <div class="search-row">
+                        <div class="form-item">
+                            <label>文章标题</label>
+                            <input type="text" placeholder="请输入文章标题">
+                        </div>
+                        <div class="form-item">
+                            <label>文章分类</label>
+                            <select>
+                                <option value="">全部分类</option>
+                                <option value="1">技术分享</option>
+                                <option value="2">生活随笔</option>
+                                <option value="3">项目实战</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label>发布状态</label>
+                            <select>
+                                <option value="">全部状态</option>
+                                <option value="published">已发布</option>
+                                <option value="draft">草稿</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary">🔍 查询</button>
+                        <button class="btn btn-default">重置</button>
+                    </div>
+                </div>
+                
+                <!-- 表格 -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <span class="table-title">文章列表</span>
+                        <div class="table-toolbar">
+                            <button class="btn btn-primary">+ 新建文章</button>
+                            <button class="btn btn-danger">批量删除</button>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox"></th>
+                                <th>文章标题</th>
+                                <th>分类</th>
+                                <th>标签</th>
+                                <th>阅读量</th>
+                                <th>评论数</th>
+                                <th>状态</th>
+                                <th>发布时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Spring Boot 3.0 新特性详解</td>
+                                <td><span class="tag tag-blue">技术分享</span></td>
+                                <td>
+                                    <span class="tag tag-default">Java</span>
+                                    <span class="tag tag-default">Spring</span>
+                                </td>
+                                <td>1,234</td>
+                                <td>56</td>
+                                <td><span class="tag tag-success">已发布</span></td>
+                                <td>2026-03-24 10:30</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <span class="action-btn">编辑</span>
+                                        <span class="action-btn">查看</span>
+                                        <span class="action-btn danger">删除</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Vue 3 Composition API 最佳实践</td>
+                                <td><span class="tag tag-blue">技术分享</span></td>
+                                <td>
+                                    <span class="tag tag-default">Vue</span>
+                                    <span class="tag tag-default">前端</span>
+                                </td>
+                                <td>892</td>
+                                <td>32</td>
+                                <td><span class="tag tag-success">已发布</span></td>
+                                <td>2026-03-23 14:20</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <span class="action-btn">编辑</span>
+                                        <span class="action-btn">查看</span>
+                                        <span class="action-btn danger">删除</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>我的2025年度总结</td>
+                                <td><span class="tag tag-warning">生活随笔</span></td>
+                                <td>
+                                    <span class="tag tag-default">生活</span>
+                                </td>
+                                <td>456</td>
+                                <td>28</td>
+                                <td><span class="tag tag-success">已发布</span></td>
+                                <td>2026-03-20 09:15</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <span class="action-btn">编辑</span>
+                                        <span class="action-btn">查看</span>
+                                        <span class="action-btn danger">删除</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>微服务架构设计模式学习笔记</td>
+                                <td><span class="tag tag-blue">技术分享</span></td>
+                                <td>
+                                    <span class="tag tag-default">架构</span>
+                                    <span class="tag tag-default">微服务</span>
+                                </td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><span class="tag tag-warning">草稿</span></td>
+                                <td>2026-03-19 16:45</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <span class="action-btn">编辑</span>
+                                        <span class="action-btn">发布</span>
+                                        <span class="action-btn danger">删除</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Docker容器化部署实战</td>
+                                <td><span class="tag tag-success">项目实战</span></td>
+                                <td>
+                                    <span class="tag tag-default">Docker</span>
+                                    <span class="tag tag-default">DevOps</span>
+                                </td>
+                                <td>2,156</td>
+                                <td>89</td>
+                                <td><span class="tag tag-success">已发布</span></td>
+                                <td>2026-03-15 11:30</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <span class="action-btn">编辑</span>
+                                        <span class="action-btn">查看</span>
+                                        <span class="action-btn danger">删除</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        <span>共 5 条</span>
+                        <button class="page-btn">‹</button>
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn">3</button>
+                        <button class="page-btn">›</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的博客 - 技术分享与生活随笔</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+        
+        .header { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 100; }
+        .header-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 20px; font-weight: bold; color: #1890ff; display: flex; align-items: center; gap: 8px; }
+        .nav { display: flex; gap: 32px; }
+        .nav a { color: #666; font-size: 15px; transition: color 0.3s; }
+        .nav a:hover, .nav a.active { color: #1890ff; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .search-box { display: flex; align-items: center; background: #f5f5f5; border-radius: 20px; padding: 8px 16px; }
+        .search-box input { border: none; background: transparent; outline: none; width: 160px; }
+        .btn-login { padding: 8px 20px; background: #1890ff; color: #fff; border-radius: 20px; font-size: 14px; transition: background 0.3s; }
+        .btn-login:hover { background: #40a9ff; }
+        
+        .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; gap: 24px; }
+        
+        .content { flex: 1; }
+        
+        .banner { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 48px; color: #fff; margin-bottom: 24px; }
+        .banner h1 { font-size: 32px; margin-bottom: 12px; }
+        .banner p { font-size: 16px; opacity: 0.9; }
+        
+        .article-list { display: flex; flex-direction: column; gap: 20px; }
+        .article-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.3s; }
+        .article-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .article-card.featured { border-left: 4px solid #1890ff; }
+        .article-header { display: flex; gap: 20px; }
+        .article-cover { width: 200px; height: 130px; border-radius: 8px; background: #e8e8e8; flex-shrink: 0; overflow: hidden; }
+        .article-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .article-info { flex: 1; }
+        .article-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #333; display: flex; align-items: center; gap: 8px; }
+        .article-title:hover { color: #1890ff; }
+        .article-title .tag { font-size: 12px; padding: 2px 8px; background: #ff4d4f; color: #fff; border-radius: 4px; font-weight: normal; }
+        .article-title .tag.top { background: #faad14; }
+        .article-summary { color: #666; font-size: 14px; line-height: 1.8; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .article-meta { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #999; }
+        .article-meta span { display: flex; align-items: center; gap: 4px; }
+        .article-tags { display: flex; gap: 8px; margin-top: 12px; }
+        .article-tags a { padding: 4px 12px; background: #f0f0f0; border-radius: 4px; font-size: 12px; color: #666; transition: all 0.3s; }
+        .article-tags a:hover { background: #1890ff; color: #fff; }
+        
+        .sidebar { width: 300px; flex-shrink: 0; }
+        .sidebar-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .sidebar-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+        
+        .category-list { display: flex; flex-direction: column; gap: 8px; }
+        .category-item { display: flex; justify-content: space-between; padding: 10px 12px; background: #fafafa; border-radius: 8px; transition: all 0.3s; cursor: pointer; }
+        .category-item:hover { background: #e6f7ff; color: #1890ff; }
+        .category-item .count { background: #f0f0f0; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag-cloud a { padding: 6px 12px; background: #f0f0f0; border-radius: 4px; font-size: 13px; color: #666; transition: all 0.3s; }
+        .tag-cloud a:hover { background: #1890ff; color: #fff; }
+        .tag-cloud a.hot { background: #fff1f0; color: #ff4d4f; }
+        
+        .hot-list { display: flex; flex-direction: column; gap: 12px; }
+        .hot-item { display: flex; gap: 12px; align-items: flex-start; }
+        .hot-rank { width: 24px; height: 24px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #999; }
+        .hot-rank.top { background: #ff4d4f; color: #fff; }
+        .hot-rank.second { background: #faad14; color: #fff; }
+        .hot-rank.third { background: #1890ff; color: #fff; }
+        .hot-title { font-size: 14px; color: #333; line-height: 1.5; cursor: pointer; }
+        .hot-title:hover { color: #1890ff; }
+        
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 32px; }
+        .pagination a, .pagination span { padding: 8px 16px; background: #fff; border-radius: 8px; color: #666; font-size: 14px; }
+        .pagination a:hover { background: #e6f7ff; color: #1890ff; }
+        .pagination .active { background: #1890ff; color: #fff; }
+        
+        .footer { background: #fff; margin-top: 48px; padding: 32px 24px; text-align: center; color: #999; font-size: 14px; }
+        .footer a { color: #1890ff; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <a href="#" class="logo">📝 我的博客</a>
+            <nav class="nav">
+                <a href="#" class="active">首页</a>
+                <a href="#">技术分享</a>
+                <a href="#">生活随笔</a>
+                <a href="#">项目实战</a>
+                <a href="#">关于我</a>
+            </nav>
+            <div class="header-right">
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" placeholder="搜索文章...">
+                </div>
+                <a href="#" class="btn-login">登录</a>
+            </div>
+        </div>
+    </header>
+    
+    <main class="main">
+        <div class="content">
+            <div class="banner">
+                <h1>欢迎来到我的博客</h1>
+                <p>记录技术成长，分享生活点滴。在这里，我会分享我的技术学习心得、项目实践经验以及生活中的感悟。</p>
+            </div>
+            
+            <div class="article-list">
+                <article class="article-card featured">
+                    <div class="article-header">
+                        <div class="article-cover" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div class="article-info">
+                            <a href="#" class="article-title">
+                                <span class="tag top">置顶</span>
+                                Spring Boot 3.0 新特性详解
+                            </a>
+                            <p class="article-summary">Spring Boot 3.0 是一个重要的里程碑版本，带来了许多令人兴奋的新特性。本文将详细介绍 Spring Boot 3.0 的主要更新内容，包括对 Java 17 的支持、原生编译、新的可观测性 API 等...</p>
+                            <div class="article-meta">
+                                <span>📅 2026-03-24</span>
+                                <span>👁 1,234 阅读</span>
+                                <span>💬 56 评论</span>
+                                <span>❤️ 128 点赞</span>
+                            </div>
+                            <div class="article-tags">
+                                <a href="#">Java</a>
+                                <a href="#">Spring Boot</a>
+                                <a href="#">微服务</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                
+                <article class="article-card">
+                    <div class="article-header">
+                        <div class="article-cover" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                        <div class="article-info">
+                            <a href="#" class="article-title">Vue 3 Composition API 最佳实践</a>
+                            <p class="article-summary">Vue 3 的 Composition API 为我们提供了一种更灵活、更可组合的方式来组织组件逻辑。本文将结合实际项目经验，分享一些使用 Composition API 的最佳实践...</p>
+                            <div class="article-meta">
+                                <span>📅 2026-03-23</span>
+                                <span>👁 892 阅读</span>
+                                <span>💬 32 评论</span>
+                                <span>❤️ 86 点赞</span>
+                            </div>
+                            <div class="article-tags">
+                                <a href="#">Vue</a>
+                                <a href="#">前端</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                
+                <article class="article-card">
+                    <div class="article-header">
+                        <div class="article-cover" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                        <div class="article-info">
+                            <a href="#" class="article-title">Docker 容器化部署实战指南</a>
+                            <p class="article-summary">Docker 是现代应用部署的重要工具。本文将从零开始，详细介绍如何使用 Docker 进行应用的容器化部署，包括 Dockerfile 编写、镜像构建、容器编排等内容...</p>
+                            <div class="article-meta">
+                                <span>📅 2026-03-20</span>
+                                <span>👁 2,156 阅读</span>
+                                <span>💬 89 评论</span>
+                                <span>❤️ 245 点赞</span>
+                            </div>
+                            <div class="article-tags">
+                                <a href="#">Docker</a>
+                                <a href="#">DevOps</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                
+                <article class="article-card">
+                    <div class="article-header">
+                        <div class="article-cover" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"></div>
+                        <div class="article-info">
+                            <a href="#" class="article-title">我的2025年度总结</a>
+                            <p class="article-summary">时光飞逝，又是一年过去了。回首2025年，有收获也有遗憾，有成长也有挫折。在这篇文章中，我想分享一下这一年的所见、所想、所感...</p>
+                            <div class="article-meta">
+                                <span>📅 2026-03-18</span>
+                                <span>👁 456 阅读</span>
+                                <span>💬 28 评论</span>
+                                <span>❤️ 67 点赞</span>
+                            </div>
+                            <div class="article-tags">
+                                <a href="#">生活</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            
+            <div class="pagination">
+                <a href="#">‹ 上一页</a>
+                <a href="#" class="active">1</a>
+                <a href="#">2</a>
+                <a href="#">3</a>
+                <span>...</span>
+                <a href="#">10</a>
+                <a href="#">下一页 ›</a>
+            </div>
+        </div>
+        
+        <aside class="sidebar">
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">📂 文章分类</h3>
+                <div class="category-list">
+                    <div class="category-item">
+                        <span>技术分享</span>
+                        <span class="count">24</span>
+                    </div>
+                    <div class="category-item">
+                        <span>生活随笔</span>
+                        <span class="count">12</span>
+                    </div>
+                    <div class="category-item">
+                        <span>项目实战</span>
+                        <span class="count">8</span>
+                    </div>
+                    <div class="category-item">
+                        <span>读书笔记</span>
+                        <span class="count">6</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">🏷️ 热门标签</h3>
+                <div class="tag-cloud">
+                    <a href="#" class="hot">Java</a>
+                    <a href="#" class="hot">Spring Boot</a>
+                    <a href="#">Vue</a>
+                    <a href="#">Docker</a>
+                    <a href="#">MySQL</a>
+                    <a href="#">Redis</a>
+                    <a href="#">微服务</a>
+                    <a href="#">前端</a>
+                    <a href="#">架构</a>
+                </div>
+            </div>
+            
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">🔥 热门文章</h3>
+                <div class="hot-list">
+                    <div class="hot-item">
+                        <span class="hot-rank top">1</span>
+                        <a href="#" class="hot-title">Spring Boot 3.0 新特性详解</a>
+                    </div>
+                    <div class="hot-item">
+                        <span class="hot-rank second">2</span>
+                        <a href="#" class="hot-title">Docker 容器化部署实战指南</a>
+                    </div>
+                    <div class="hot-item">
+                        <span class="hot-rank third">3</span>
+                        <a href="#" class="hot-title">Vue 3 Composition API 最佳实践</a>
+                    </div>
+                    <div class="hot-item">
+                        <span class="hot-rank">4</span>
+                        <a href="#" class="hot-title">MySQL 索引优化实战</a>
+                    </div>
+                    <div class="hot-item">
+                        <span class="hot-rank">5</span>
+                        <a href="#" class="hot-title">Redis 缓存穿透解决方案</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2026 我的博客 | Powered by <a href="#">BMS</a> | <a href="#">RSS</a></p>
+        <p style="margin-top: 8px;">记录技术成长，分享生活点滴</p>
+    </footer>
+</body>
+</html>

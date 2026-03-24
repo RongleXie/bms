@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建文章 - 博客管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 220px; background: #001529; color: #fff; flex-shrink: 0; }
+        .logo { height: 64px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); font-size: 18px; font-weight: bold; }
+        .menu { padding: 16px 0; }
+        .menu-item { padding: 12px 24px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.65); transition: all 0.3s; }
+        .menu-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .menu-item.active { background: #1890ff; color: #fff; }
+        .menu-group { padding: 8px 24px; color: rgba(255,255,255,0.4); font-size: 12px; margin-top: 8px; }
+        .icon { width: 16px; height: 16px; }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .header { height: 64px; background: #fff; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .breadcrumb { color: #666; font-size: 14px; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #1890ff; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
+        .content { padding: 24px; flex: 1; }
+        
+        .form-container { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .form-header { padding: 16px 24px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .form-title { font-size: 16px; font-weight: 500; }
+        
+        .form-body { padding: 24px; }
+        .form-row { display: flex; gap: 24px; margin-bottom: 24px; }
+        .form-item { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .form-item.full { flex: none; width: 100%; }
+        .form-item label { font-size: 14px; color: #333; font-weight: 500; }
+        .form-item label .required { color: #ff4d4f; margin-left: 4px; }
+        .form-item input, .form-item select, .form-item textarea { padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; transition: all 0.3s; }
+        .form-item input:focus, .form-item select:focus, .form-item textarea:focus { outline: none; border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+        .form-item textarea { min-height: 300px; resize: vertical; font-family: inherit; line-height: 1.6; }
+        .form-item .hint { font-size: 12px; color: #999; }
+        
+        .editor-toolbar { display: flex; gap: 4px; padding: 8px 12px; border: 1px solid #d9d9d9; border-bottom: none; border-radius: 4px 4px 0 0; background: #fafafa; }
+        .toolbar-btn { width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .toolbar-btn:hover { background: #e6e6e6; }
+        .toolbar-divider { width: 1px; background: #e8e8e8; margin: 4px 8px; }
+        
+        .editor-area { border: 1px solid #d9d9d9; border-radius: 0 0 4px 4px; min-height: 400px; padding: 16px; background: #fff; }
+        .editor-area:focus-within { border-color: #1890ff; }
+        
+        .tag-input { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; min-height: 40px; align-items: center; }
+        .tag-input:focus-within { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+        .tag-item { background: #f0f0f0; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; font-size: 13px; }
+        .tag-item .close { cursor: pointer; color: #999; }
+        .tag-item .close:hover { color: #ff4d4f; }
+        .tag-input input { border: none; outline: none; flex: 1; min-width: 100px; }
+        
+        .btn { height: 36px; padding: 0 20px; border-radius: 4px; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; }
+        .btn-primary { background: #1890ff; color: #fff; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-default { background: #fff; border: 1px solid #d9d9d9; color: #333; }
+        .btn-default:hover { border-color: #1890ff; color: #1890ff; }
+        
+        .form-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 12px; }
+        
+        .cover-upload { border: 1px dashed #d9d9d9; border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .cover-upload:hover { border-color: #1890ff; }
+        .cover-upload .icon { font-size: 32px; color: #999; margin-bottom: 8px; }
+        .cover-upload p { color: #666; font-size: 14px; }
+        .cover-upload .hint { color: #999; font-size: 12px; margin-top: 8px; }
+        
+        .cover-preview { position: relative; display: inline-block; }
+        .cover-preview img { max-width: 200px; border-radius: 8px; }
+        .cover-preview .remove { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ff4d4f; color: #fff; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="logo">📊 BMS 博客管理</div>
+            <div class="menu">
+                <div class="menu-group">内容管理</div>
+                <div class="menu-item active">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    文章管理
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
+                    分类标签
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>
+                    评论管理
+                </div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    媒体库
+                </div>
+                <div class="menu-group">系统管理</div>
+                <div class="menu-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    用户管理
+                </div>
+            </div>
+        </div>
+        
+        <div class="main">
+            <div class="header">
+                <div class="header-left">
+                    <span class="breadcrumb">首页 / 内容管理 / 文章管理 / 新建文章</span>
+                </div>
+                <div class="header-right">
+                    <span>管理员</span>
+                    <div class="avatar">A</div>
+                </div>
+            </div>
+            
+            <div class="content">
+                <div class="form-container">
+                    <div class="form-header">
+                        <span class="form-title">新建文章</span>
+                    </div>
+                    
+                    <div class="form-body">
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label>文章标题<span class="required">*</span></label>
+                                <input type="text" placeholder="请输入文章标题">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label>文章分类<span class="required">*</span></label>
+                                <select>
+                                    <option value="">请选择分类</option>
+                                    <option value="1">技术分享</option>
+                                    <option value="2">生活随笔</option>
+                                    <option value="3">项目实战</option>
+                                </select>
+                            </div>
+                            <div class="form-item">
+                                <label>文章标签</label>
+                                <div class="tag-input">
+                                    <span class="tag-item">Java <span class="close">×</span></span>
+                                    <span class="tag-item">Spring Boot <span class="close">×</span></span>
+                                    <input type="text" placeholder="输入后按回车添加">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-item full">
+                                <label>文章内容<span class="required">*</span></label>
+                                <div class="editor-toolbar">
+                                    <button class="toolbar-btn" title="加粗"><b>B</b></button>
+                                    <button class="toolbar-btn" title="斜体"><i>I</i></button>
+                                    <button class="toolbar-btn" title="下划线"><u>U</u></button>
+                                    <span class="toolbar-divider"></span>
+                                    <button class="toolbar-btn" title="标题">H</button>
+                                    <button class="toolbar-btn" title="引用">"</button>
+                                    <button class="toolbar-btn" title="代码">&lt;/&gt;</button>
+                                    <span class="toolbar-divider"></span>
+                                    <button class="toolbar-btn" title="有序列表">1.</button>
+                                    <button class="toolbar-btn" title="无序列表">•</button>
+                                    <span class="toolbar-divider"></span>
+                                    <button class="toolbar-btn" title="链接">🔗</button>
+                                    <button class="toolbar-btn" title="图片">🖼</button>
+                                    <button class="toolbar-btn" title="表格">▦</button>
+                                </div>
+                                <div class="editor-area" contenteditable="true">
+                                    <p>在这里输入文章内容...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label>文章摘要</label>
+                                <textarea placeholder="请输入文章摘要，不填写将自动截取正文前200字" style="min-height: 80px;"></textarea>
+                                <span class="hint">最多500字</span>
+                            </div>
+                            <div class="form-item">
+                                <label>封面图片</label>
+                                <div class="cover-upload">
+                                    <div class="icon">📷</div>
+                                    <p>点击或拖拽上传封面图片</p>
+                                    <span class="hint">支持 JPG、PNG 格式，建议尺寸 800x400</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label>发布状态</label>
+                                <select>
+                                    <option value="draft">草稿</option>
+                                    <option value="published">发布</option>
+                                </select>
+                            </div>
+                            <div class="form-item">
+                                <label>发布时间</label>
+                                <input type="datetime-local">
+                                <span class="hint">不设置则立即发布</span>
+                            </div>
+                            <div class="form-item">
+                                <label>文章置顶</label>
+                                <select>
+                                    <option value="0">不置顶</option>
+                                    <option value="1">置顶</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-item full">
+                                <label>SEO设置</label>
+                                <div style="display: flex; gap: 16px;">
+                                    <div class="form-item" style="flex: 1;">
+                                        <label style="font-weight: normal;">关键词</label>
+                                        <input type="text" placeholder="多个关键词用英文逗号分隔">
+                                    </div>
+                                    <div class="form-item" style="flex: 1;">
+                                        <label style="font-weight: normal;">描述</label>
+                                        <input type="text" placeholder="SEO描述，建议150字以内">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-footer">
+                        <button class="btn btn-default">预览</button>
+                        <button class="btn btn-default">保存草稿</button>
+                        <button class="btn btn-primary">发布文章</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
