@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>vip.xiaonuo.bms</groupId>
+        <artifactId>bms</artifactId>
+        <version>3.0.0</version>
+    </parent>
+
+    <artifactId>bms-plugin-api</artifactId>
+    <packaging>pom</packaging>
+    <description>插件API接口模块</description>
+
+    <modules>
+        <!-- 登录鉴权插件api接口 -->
+        <module>bms-plugin-auth-api</module>
+
+        <!-- 业务功能插件api接口 -->
+        <module>bms-plugin-biz-api</module>
+
+        <!-- C端功能插件api接口 -->
+        <module>bms-plugin-client-api</module>
+
+        <!-- 开发工具插件api接口 -->
+        <module>bms-plugin-dev-api</module>
+
+        <!-- 代码生成插件api接口 -->
+        <module>bms-plugin-gen-api</module>
+
+        <!-- 移动端管理插件api接口 -->
+        <module>bms-plugin-mobile-api</module>
+
+        <!-- 系统功能插件api接口 -->
+        <module>bms-plugin-sys-api</module>
+    </modules>
+</project>
