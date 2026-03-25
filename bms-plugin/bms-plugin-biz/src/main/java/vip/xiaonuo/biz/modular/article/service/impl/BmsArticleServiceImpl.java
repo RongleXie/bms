@@ -20,6 +20,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vip.xiaonuo.biz.modular.article.entity.BmsArticle;
@@ -30,6 +31,7 @@ import vip.xiaonuo.biz.modular.article.param.BmsArticleEditParam;
 import vip.xiaonuo.biz.modular.article.param.BmsArticleIdParam;
 import vip.xiaonuo.biz.modular.article.param.BmsArticlePageParam;
 import vip.xiaonuo.biz.modular.article.service.BmsArticleService;
+import vip.xiaonuo.biz.modular.article.version.service.BmsArticleVersionService;
 import cn.dev33.satoken.stp.StpUtil;
 import vip.xiaonuo.common.enums.CommonSortOrderEnum;
 import vip.xiaonuo.common.exception.CommonException;
@@ -38,14 +40,11 @@ import vip.xiaonuo.common.page.CommonPageRequest;
 import java.util.Date;
 import java.util.List;
 
-/**
- * 文章Service接口实现类
- *
- * @author xiaonuo
- * @date 2026/03/24
- **/
 @Service
 public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArticle> implements BmsArticleService {
+
+    @Resource
+    private BmsArticleVersionService articleVersionService;
 
     @Override
     public Page<BmsArticle> page(BmsArticlePageParam bmsArticlePageParam) {
@@ -110,6 +109,15 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public void edit(BmsArticleEditParam bmsArticleEditParam) {
         BmsArticle bmsArticle = this.queryEntity(bmsArticleEditParam.getId());
+        
+        articleVersionService.saveVersion(
+            bmsArticle.getId(),
+            bmsArticle.getTitle(),
+            bmsArticle.getContent(),
+            bmsArticle.getSummary(),
+            "编辑前自动保存"
+        );
+        
         BeanUtil.copyProperties(bmsArticleEditParam, bmsArticle);
         this.updateById(bmsArticle);
     }

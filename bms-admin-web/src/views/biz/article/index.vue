@@ -105,7 +105,9 @@
 						<a @click="detailRef.onOpen(record)" v-if="hasPerm('bizArticleView')">预览</a>
 						<a-divider type="vertical" v-if="hasPerm(['bizArticleView', 'bizArticleEdit'], 'and')" />
 						<a @click="formRef.onOpen(record)" v-if="hasPerm('bizArticleEdit')">编辑</a>
-						<a-divider type="vertical" v-if="hasPerm(['bizArticleEdit', 'bizArticleDelete'], 'and')" />
+						<a-divider type="vertical" v-if="hasPerm(['bizArticleEdit', 'bizArticleVersion'], 'and')" />
+						<a @click="versionRef.onOpen(record.id)" v-if="hasPerm('bizArticleVersion')">版本</a>
+						<a-divider type="vertical" v-if="hasPerm(['bizArticleVersion', 'bizArticleDelete'], 'and')" />
 						<a-popconfirm title="确定要删除吗？" @confirm="deleteBizArticle(record)">
 							<a-button type="link" danger size="small" v-if="hasPerm('bizArticleDelete')">删除</a-button>
 						</a-popconfirm>
@@ -116,6 +118,7 @@
 	</xn-panel>
 	<Form ref="formRef" @successful="tableRef.refresh()" />
 	<Detail ref="detailRef" />
+	<Version ref="versionRef" @successful="tableRef.refresh()" />
 </template>
 
 <script setup name="bizArticle">
@@ -123,6 +126,7 @@
 	import { cloneDeep } from 'lodash-es'
 	import Form from './form.vue'
 	import Detail from './detail.vue'
+	import Version from './version.vue'
 	import bizArticleApi from '@/api/biz/bizArticleApi'
 	import bizCategoryApi from '@/api/biz/bizCategoryApi'
 	import bizTagApi from '@/api/biz/bizTagApi'
@@ -132,6 +136,7 @@
 	const tableRef = ref()
 	const formRef = ref()
 	const detailRef = ref()
+	const versionRef = ref()
 	const toolConfig = { refresh: true, height: true, columnSetting: true, striped: false }
 	const loading = ref(false)
 	const advanced = ref(false)
