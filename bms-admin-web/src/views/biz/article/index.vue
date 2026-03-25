@@ -1,5 +1,25 @@
 <template>
 	<xn-panel>
+		<a-card :bordered="false" style="margin-bottom: 16px">
+			<a-input-search
+				v-model:value="globalKeyword"
+				placeholder="搜索文章标题、内容..."
+				enter-button="全文搜索"
+				size="large"
+				allow-clear
+				@search="handleGlobalSearch"
+				@change="handleSearchChange"
+			>
+				<template #prefix>
+					<SearchOutlined />
+				</template>
+			</a-input-search>
+			<div v-if="suggestions.length > 0" class="search-suggestions">
+				<a-tag v-for="item in suggestions" :key="item" @click="handleSelectSuggestion(item)" style="cursor: pointer; margin: 4px">
+					{{ item }}
+				</a-tag>
+			</div>
+		</a-card>
 		<a-form ref="searchFormRef" :model="searchFormState">
 			<a-row :gutter="10">
 				<a-col :xs="24" :sm="24" :md="24" :lg="6" :xl="6">
@@ -121,6 +141,12 @@
 	<Version ref="versionRef" @successful="tableRef.refresh()" />
 </template>
 
+<style scoped>
+.search-suggestions {
+	margin-top: 8px;
+}
+</style>
+
 <script setup name="bizArticle">
 	import tool from '@/utils/tool'
 	import { cloneDeep } from 'lodash-es'
@@ -130,6 +156,7 @@
 	import bizArticleApi from '@/api/biz/bizArticleApi'
 	import bizCategoryApi from '@/api/biz/bizCategoryApi'
 	import bizTagApi from '@/api/biz/bizTagApi'
+	import bizArticleSearchApi from '@/api/biz/bizArticleSearchApi'
 
 	const searchFormState = ref({})
 	const searchFormRef = ref()
@@ -143,6 +170,37 @@
 	const categoryTreeData = ref([])
 	const tagOptions = ref([])
 	const treeFieldNames = { children: 'children', title: 'name', key: 'id', value: 'id' }
+	const globalKeyword = ref('')
+	const suggestions = ref([])
+	const isGlobalSearch = ref(false)
+
+	const handleGlobalSearch = (value) => {
+		if (!value) {
+			isGlobalSearch.value = false
+			tableRef.value.refresh(true)
+			return
+		}
+		isGlobalSearch.value = true
+		searchFormState.value = { title: value }
+		tableRef.value.refresh(true)
+	}
+
+	const handleSearchChange = (e) => {
+		const value = e.target.value
+		if (value && value.length >= 2) {
+			bizArticleSearchApi.suggest({ prefix: value, limit: 5 }).then((data) => {
+				suggestions.value = data || []
+			})
+		} else {
+			suggestions.value = []
+		}
+	}
+
+	const handleSelectSuggestion = (item) => {
+		globalKeyword.value = item
+		suggestions.value = []
+		handleGlobalSearch(item)
+	}
 
 	const toggleAdvanced = () => {
 		advanced.value = !advanced.value
