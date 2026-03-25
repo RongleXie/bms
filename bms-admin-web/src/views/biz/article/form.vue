@@ -72,11 +72,10 @@
 			<a-row :gutter="16">
 				<a-col :span="24">
 					<a-form-item label="内容" name="content">
-						<a-textarea
-							v-model:value="formData.content"
-							placeholder="请输入文章内容"
-							:auto-size="{ minRows: 10, maxRows: 20 }"
-							allow-clear
+						<xn-md-editor
+							v-model="formData.content"
+							height="500px"
+							placeholder="请输入文章内容，支持 Markdown 语法"
 						/>
 					</a-form-item>
 				</a-col>
@@ -109,6 +108,7 @@
 	import bizTagApi from '@/api/biz/bizTagApi'
 	import { required } from '@/utils/formRules'
 	import tool from '@/utils/tool'
+	import { XnMdEditor } from '@/components/XnMdEditor/mdEditor'
 
 	const visible = ref(false)
 	const formRef = ref()

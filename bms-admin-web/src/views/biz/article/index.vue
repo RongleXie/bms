@@ -105,6 +105,8 @@
 				</template>
 				<template v-if="column.dataIndex === 'action'">
 					<a-space>
+						<a @click="detailRef.onOpen(record)" v-if="hasPerm('bizArticleView')">预览</a>
+						<a-divider type="vertical" v-if="hasPerm(['bizArticleView', 'bizArticleEdit'], 'and')" />
 						<a @click="formRef.onOpen(record)" v-if="hasPerm('bizArticleEdit')">编辑</a>
 						<a-divider type="vertical" v-if="hasPerm(['bizArticleEdit', 'bizArticleDelete'], 'and')" />
 						<a-popconfirm title="确定要删除吗？" @confirm="deleteBizArticle(record)">
@@ -116,12 +118,14 @@
 		</s-table>
 	</xn-panel>
 	<Form ref="formRef" @successful="tableRef.refresh()" />
+	<Detail ref="detailRef" />
 </template>
 
 <script setup name="bizArticle">
 	import tool from '@/utils/tool'
 	import { cloneDeep } from 'lodash-es'
 	import Form from './form.vue'
+	import Detail from './detail.vue'
 	import bizArticleApi from '@/api/biz/bizArticleApi'
 	import bizCategoryApi from '@/api/biz/bizCategoryApi'
 	import bizTagApi from '@/api/biz/bizTagApi'
@@ -130,6 +134,7 @@
 	const searchFormRef = ref()
 	const tableRef = ref()
 	const formRef = ref()
+	const detailRef = ref()
 	const toolConfig = { refresh: true, height: true, columnSetting: true, striped: false }
 	const loading = ref(false)
 	const advanced = ref(false)
@@ -153,7 +158,7 @@
 		{ title: '创建时间', dataIndex: 'createTime' }
 	]
 
-	if (hasPerm(['bizArticleEdit', 'bizArticleDelete'])) {
+	if (hasPerm(['bizArticleView', 'bizArticleEdit', 'bizArticleDelete'])) {
 		columns.push({
 			title: '操作',
 			dataIndex: 'action',
