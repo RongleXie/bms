@@ -30,6 +30,7 @@ import vip.xiaonuo.biz.modular.article.param.BmsArticleEditParam;
 import vip.xiaonuo.biz.modular.article.param.BmsArticleIdParam;
 import vip.xiaonuo.biz.modular.article.param.BmsArticlePageParam;
 import vip.xiaonuo.biz.modular.article.service.BmsArticleService;
+import cn.dev33.satoken.stp.StpUtil;
 import vip.xiaonuo.common.enums.CommonSortOrderEnum;
 import vip.xiaonuo.common.exception.CommonException;
 import vip.xiaonuo.common.page.CommonPageRequest;
@@ -97,6 +98,7 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public void add(BmsArticleAddParam bmsArticleAddParam) {
         BmsArticle bmsArticle = BeanUtil.toBean(bmsArticleAddParam, BmsArticle.class);
+        bmsArticle.setAuthorId(StpUtil.getLoginIdAsString());
         bmsArticle.setStatus(BmsArticleStatusEnum.DRAFT.getValue());
         bmsArticle.setViewCount(0);
         bmsArticle.setLikeCount(0);

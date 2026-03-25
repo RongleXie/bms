@@ -12,19 +12,17 @@
  */
 package vip.xiaonuo.biz.modular.comment.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.io.Serializable;
-import java.util.Date;
+import vip.xiaonuo.common.pojo.CommonEntity;
 
 @Getter
 @Setter
 @TableName("BMS_COMMENT")
-public class BmsComment implements Serializable {
+public class BmsComment extends CommonEntity {
 
     @TableId
     @Schema(description = "主键ID")
@@ -68,18 +66,4 @@ public class BmsComment implements Serializable {
 
     @Schema(description = "扩展信息JSON")
     private String extJson;
-
-    @JsonIgnore
-    @TableLogic
-    @Schema(description = "删除标志")
-    @TableField(fill = FieldFill.INSERT)
-    private String deleteFlag;
-
-    @Schema(description = "创建时间")
-    @TableField(fill = FieldFill.INSERT)
-    private Date createTime;
-
-    @Schema(description = "更新时间")
-    @TableField(fill = FieldFill.UPDATE)
-    private Date updateTime;
 }

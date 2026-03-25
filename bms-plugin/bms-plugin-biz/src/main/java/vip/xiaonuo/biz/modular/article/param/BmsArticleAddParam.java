@@ -43,9 +43,6 @@ public class BmsArticleAddParam {
     @Schema(description = "分类ID")
     private String categoryId;
 
-    @Schema(description = "作者ID")
-    private String authorId;
-
     @Schema(description = "是否置顶 (0-否, 1-是)")
     private Integer isTop;
 
