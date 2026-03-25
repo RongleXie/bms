@@ -95,13 +95,10 @@
 					</a-tag>
 				</template>
 				<template v-if="column.dataIndex === 'status'">
-					<a-switch
-						:loading="loading"
-						:checked="record.status === 'ENABLE'"
-						@change="editStatus(record)"
-						v-if="hasPerm('bizArticleUpdateStatus')"
-					/>
-					<span v-else>{{ $TOOL.dictTypeData('COMMON_STATUS', record.status) }}</span>
+					<a-tag v-if="record.status === 'DRAFT'" color="default">草稿</a-tag>
+					<a-tag v-else-if="record.status === 'PUBLISHED'" color="success">已发布</a-tag>
+					<a-tag v-else-if="record.status === 'SCHEDULED'" color="processing">待发布</a-tag>
+					<a-tag v-else color="warning">{{ record.status }}</a-tag>
 				</template>
 				<template v-if="column.dataIndex === 'action'">
 					<a-space>

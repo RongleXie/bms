@@ -93,6 +93,10 @@ public class BmsArticle extends CommonEntity {
     @Schema(description = "发布时间")
     private Date publishTime;
 
+    /** 计划发布时间（用于定时发布） */
+    @Schema(description = "计划发布时间（用于定时发布）")
+    private Date scheduledPublishTime;
+
     /** SEO关键词 */
     @Schema(description = "SEO关键词")
     private String seoKeywords;

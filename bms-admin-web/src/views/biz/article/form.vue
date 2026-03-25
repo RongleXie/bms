@@ -87,8 +87,27 @@
 					</a-form-item>
 				</a-col>
 				<a-col :span="8">
-					<a-form-item label="状态" name="status">
-						<a-radio-group v-model:value="formData.status" :options="statusOptions" />
+					<a-form-item label="发布方式" name="publishType">
+						<a-radio-group v-model:value="publishType" @change="handlePublishTypeChange">
+							<a-radio value="now">立即发布</a-radio>
+							<a-radio value="scheduled">定时发布</a-radio>
+							<a-radio value="draft">保存草稿</a-radio>
+						</a-radio-group>
+					</a-form-item>
+				</a-col>
+			</a-row>
+			<a-row :gutter="16" v-if="publishType === 'scheduled'">
+				<a-col :span="12">
+					<a-form-item label="计划发布时间" name="scheduledPublishTime">
+						<a-date-picker
+							v-model:value="formData.scheduledPublishTime"
+							show-time
+							format="YYYY-MM-DD HH:mm:ss"
+							value-format="YYYY-MM-DD HH:mm:ss"
+							placeholder="请选择计划发布时间"
+							class="xn-wd"
+							:disabled-date="disabledDate"
+						/>
 					</a-form-item>
 				</a-col>
 			</a-row>
@@ -103,6 +122,7 @@
 <script setup name="bizArticle">
 	import { message } from 'ant-design-vue'
 	import { PlusOutlined } from '@ant-design/icons-vue'
+	import dayjs from 'dayjs'
 	import bizArticleApi from '@/api/biz/bizArticleApi'
 	import bizCategoryApi from '@/api/biz/bizCategoryApi'
 	import bizTagApi from '@/api/biz/bizTagApi'
@@ -119,12 +139,32 @@
 	const tagOptions = ref([])
 	const treeFieldNames = { children: 'children', label: 'name', value: 'id', key: 'id' }
 	const coverImageFileList = ref([])
-	const statusOptions = tool.dictList('COMMON_STATUS')
+	const publishType = ref('draft')
 
 	const formRules = {
 		title: [required('请输入标题')],
 		categoryId: [required('请选择分类')],
-		content: [required('请输入内容')]
+		content: [required('请输入内容')],
+		scheduledPublishTime: [{ 
+			required: true, 
+			message: '请选择计划发布时间',
+			validator: (rule, value) => {
+				if (publishType.value === 'scheduled' && !value) {
+					return Promise.reject('请选择计划发布时间')
+				}
+				return Promise.resolve()
+			}
+		}]
+	}
+
+	const disabledDate = (current) => {
+		return current && current < dayjs().startOf('day')
+	}
+
+	const handlePublishTypeChange = (e) => {
+		if (e.target.value !== 'scheduled') {
+			formData.value.scheduledPublishTime = null
+		}
 	}
 
 	const loadCategoryTree = () => {
@@ -149,15 +189,22 @@
 	const onOpen = (record) => {
 		visible.value = true
 		formData.value = {
-			status: 'ENABLE',
 			sortCode: 0
 		}
+		publishType.value = 'draft'
 		nextTick(() => {
 			loadCategoryTree()
 			loadTagList()
 			if (record) {
 				bizArticleApi.articleDetail({ id: record.id }).then((data) => {
 					formData.value = Object.assign(formData.value, data)
+					if (formData.value.status === 'SCHEDULED') {
+						publishType.value = 'scheduled'
+					} else if (formData.value.status === 'PUBLISHED') {
+						publishType.value = 'now'
+					} else {
+						publishType.value = 'draft'
+					}
 					if (formData.value.tagIds) {
 						formData.value.tagIds = formData.value.tagIds.split(',').map((id) => id.trim())
 					}
@@ -212,9 +259,19 @@
 			if (submitData.tagIds && Array.isArray(submitData.tagIds)) {
 				submitData.tagIds = submitData.tagIds.join(',')
 			}
+			if (publishType.value === 'now') {
+				submitData.status = 'PUBLISHED'
+				submitData.scheduledPublishTime = null
+			} else if (publishType.value === 'scheduled') {
+				submitData.status = 'SCHEDULED'
+			} else {
+				submitData.status = 'DRAFT'
+				submitData.scheduledPublishTime = null
+			}
 			bizArticleApi
 				.submitForm(submitData, !!submitData.id)
 				.then(() => {
+					message.success(publishType.value === 'now' ? '发布成功' : publishType.value === 'scheduled' ? '已设置定时发布' : '保存成功')
 					onClose()
 					emit('successful')
 				})

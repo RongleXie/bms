@@ -24,15 +24,11 @@ import vip.xiaonuo.common.exception.CommonException;
 @Getter
 public enum BmsArticleStatusEnum {
 
-    /**
-     * 草稿
-     */
     DRAFT("DRAFT"),
 
-    /**
-     * 已发布
-     */
-    PUBLISHED("PUBLISHED");
+    PUBLISHED("PUBLISHED"),
+
+    SCHEDULED("SCHEDULED");
 
     private final String value;
 
@@ -41,7 +37,7 @@ public enum BmsArticleStatusEnum {
     }
 
     public static void validate(String value) {
-        boolean flag = DRAFT.getValue().equals(value) || PUBLISHED.getValue().equals(value);
+        boolean flag = DRAFT.getValue().equals(value) || PUBLISHED.getValue().equals(value) || SCHEDULED.getValue().equals(value);
         if(!flag) {
             throw new CommonException("不支持的状态：{}", value);
         }
