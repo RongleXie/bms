@@ -1,49 +1,32 @@
-import { request } from '@/utils/request'
+/**
+ * 文章版本历史接口 api
+ *
+ * @author bms
+ * @date 2026-03-26
+ */
+import { baseRequest } from '@/utils/request'
 
-const api = {
-	list: '/biz/articleVersion/list',
-	page: '/biz/articleVersion/page',
-	detail: '/biz/articleVersion/detail',
-	rollback: '/biz/articleVersion/rollback',
-	latest: '/biz/articleVersion/latest'
-}
+const request = (url, ...arg) => baseRequest(`/biz/articleVersion/` + url, ...arg)
 
-export function versionList(params) {
-	return request({
-		url: api.list,
-		method: 'get',
-		params
-	})
-}
-
-export function versionPage(params) {
-	return request({
-		url: api.page,
-		method: 'get',
-		params
-	})
-}
-
-export function versionDetail(params) {
-	return request({
-		url: api.detail,
-		method: 'get',
-		params
-	})
-}
-
-export function versionRollback(params) {
-	return request({
-		url: api.rollback,
-		method: 'post',
-		params
-	})
-}
-
-export function versionLatest(params) {
-	return request({
-		url: api.latest,
-		method: 'get',
-		params
-	})
+export default {
+	// 获取版本列表
+	list(data) {
+		return request('list', data, 'get')
+	},
+	// 获取版本分页
+	page(data) {
+		return request('page', data, 'get')
+	},
+	// 获取版本详情
+	detail(data) {
+		return request('detail', data, 'get')
+	},
+	// 版本回滚
+	rollback(data) {
+		return request('rollback', data, 'post')
+	},
+	// 获取最新版本
+	latest(data) {
+		return request('latest', data, 'get')
+	}
 }

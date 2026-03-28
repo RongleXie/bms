@@ -1,31 +1,24 @@
-import { request } from '@/utils/request'
+/**
+ * 文章全文搜索接口 api
+ *
+ * @author bms
+ * @date 2026-03-26
+ */
+import { baseRequest } from '@/utils/request'
 
-const api = {
-	search: '/biz/articleSearch/search',
-	searchAdvanced: '/biz/articleSearch/searchAdvanced',
-	suggest: '/biz/articleSearch/suggest'
-}
+const request = (url, ...arg) => baseRequest(`/biz/articleSearch/` + url, ...arg)
 
-export function articleSearch(params) {
-	return request({
-		url: api.search,
-		method: 'get',
-		params
-	})
-}
-
-export function articleSearchAdvanced(params) {
-	return request({
-		url: api.searchAdvanced,
-		method: 'get',
-		params
-	})
-}
-
-export function articleSuggest(params) {
-	return request({
-		url: api.suggest,
-		method: 'get',
-		params
-	})
+export default {
+	// 全文搜索
+	search(data) {
+		return request('search', data, 'get')
+	},
+	// 高级搜索
+	searchAdvanced(data) {
+		return request('searchAdvanced', data, 'get')
+	},
+	// 搜索建议
+	suggest(data) {
+		return request('suggest', data, 'get')
+	}
 }

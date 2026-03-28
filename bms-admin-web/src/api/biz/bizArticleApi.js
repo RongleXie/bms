@@ -54,5 +54,25 @@ export default {
 	// 获取标签列表
 	articleTagList(data) {
 		return request('tagList', data, 'get')
+	},
+	// 发布文章
+	articlePublish(data) {
+		return request('publish', data)
+	},
+	// 撤回文章
+	articleUnpublish(data) {
+		return request('unpublish', data)
+	},
+	// 定时发布
+	articleScheduledPublish(data, scheduledTime) {
+		return request('scheduledPublish?scheduledTime=' + encodeURIComponent(scheduledTime), data)
+	},
+	// 取消定时发布
+	articleCancelScheduled(data) {
+		return request('cancelScheduled', data)
+	},
+	// 获取待发布文章列表
+	articleScheduledList(data) {
+		return request('scheduledList', data, 'get')
 	}
 }

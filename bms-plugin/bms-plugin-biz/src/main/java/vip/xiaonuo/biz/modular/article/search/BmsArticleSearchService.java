@@ -1,4 +1,4 @@
-package vip.xiaonuo.biz.modular.article.service;
+package vip.xiaonuo.biz.modular.article.search;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import vip.xiaonuo.biz.modular.article.entity.BmsArticle;

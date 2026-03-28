@@ -1,31 +1,67 @@
 <template>
-	<xn-form-container title="版本历史" :width="1000" :visible="visible" :destroy-on-close="true" @close="onClose">
-		<a-table
-			:columns="columns"
-			:data-source="versionList"
-			:loading="loading"
-			:pagination="pagination"
-			row-key="id"
-			@change="handleTableChange"
-		>
-			<template #bodyCell="{ column, record }">
-				<template v-if="column.dataIndex === 'versionNumber'">
-					<a-tag color="blue">v{{ record.versionNumber }}</a-tag>
+	<xn-panel>
+		<a-card :bordered="false">
+			<a-form ref="searchFormRef" :model="searchFormState">
+				<a-row :gutter="24">
+					<a-col :span="6">
+						<a-form-item label="文章" name="articleId">
+							<a-select
+								v-model:value="searchFormState.articleId"
+								placeholder="请选择文章"
+								allow-clear
+								show-search
+								:filter-option="filterOption"
+								:options="articleOptions"
+								@change="handleArticleChange"
+							/>
+						</a-form-item>
+					</a-col>
+					<a-col :span="6">
+						<a-form-item>
+							<a-space>
+								<a-button type="primary" @click="loadVersionList">
+									<template #icon><SearchOutlined /></template>
+									查询
+								</a-button>
+								<a-button @click="reset">
+									<template #icon><RedoOutlined /></template>
+									重置
+								</a-button>
+							</a-space>
+						</a-form-item>
+					</a-col>
+				</a-row>
+			</a-form>
+		</a-card>
+
+		<a-card :bordered="false" style="margin-top: 16px">
+			<a-table
+				:columns="columns"
+				:data-source="versionList"
+				:loading="loading"
+				:pagination="pagination"
+				row-key="id"
+				@change="handleTableChange"
+			>
+				<template #bodyCell="{ column, record }">
+					<template v-if="column.dataIndex === 'versionNumber'">
+						<a-tag color="blue">v{{ record.versionNumber }}</a-tag>
+					</template>
+					<template v-if="column.dataIndex === 'createTime'">
+						{{ formatDate(record.createTime) }}
+					</template>
+					<template v-if="column.dataIndex === 'action'">
+						<a-space>
+							<a @click="handlePreview(record)" v-if="hasPerm('bizArticleVersionList')">预览</a>
+							<a-divider type="vertical" />
+							<a-popconfirm title="确定要回滚到此版本吗？" @confirm="handleRollback(record)" v-if="hasPerm('bizArticleVersionRollback')">
+								<a>回滚</a>
+							</a-popconfirm>
+						</a-space>
+					</template>
 				</template>
-				<template v-if="column.dataIndex === 'createTime'">
-					{{ formatDate(record.createTime) }}
-				</template>
-				<template v-if="column.dataIndex === 'action'">
-					<a-space>
-						<a @click="handlePreview(record)">预览</a>
-						<a-divider type="vertical" />
-						<a-popconfirm title="确定要回滚到此版本吗？" @confirm="handleRollback(record)">
-							<a>回滚</a>
-						</a-popconfirm>
-					</a-space>
-				</template>
-			</template>
-		</a-table>
+			</a-table>
+		</a-card>
 
 		<a-modal
 			v-model:open="previewVisible"
@@ -37,6 +73,7 @@
 				<a-descriptions-item label="版本号">v{{ previewData.versionNumber }}</a-descriptions-item>
 				<a-descriptions-item label="标题">{{ previewData.title }}</a-descriptions-item>
 				<a-descriptions-item label="摘要">{{ previewData.summary || '-' }}</a-descriptions-item>
+				<a-descriptions-item label="变更摘要">{{ previewData.changeSummary || '-' }}</a-descriptions-item>
 				<a-descriptions-item label="创建时间">{{ formatDate(previewData.createTime) }}</a-descriptions-item>
 				<a-descriptions-item label="内容">
 					<div class="version-content-preview">
@@ -45,22 +82,28 @@
 				</a-descriptions-item>
 			</a-descriptions>
 		</a-modal>
-	</xn-form-container>
+	</xn-panel>
 </template>
 
 <script setup name="bizArticleVersion">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { SearchOutlined, RedoOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import bizArticleVersionApi from '@/api/biz/bizArticleVersionApi'
+import bizArticleApi from '@/api/biz/bizArticleApi'
 import { XnMdPreview } from '@/components/XnMdEditor/mdEditor'
+import tool from '@/utils/tool'
 
-const visible = ref(false)
 const loading = ref(false)
-const articleId = ref('')
 const versionList = ref([])
 const previewVisible = ref(false)
 const previewData = ref({})
+const articleOptions = ref([])
+
+const searchFormState = reactive({
+	articleId: null
+})
 
 const columns = [
 	{ title: '版本号', dataIndex: 'versionNumber', width: 100 },
@@ -82,17 +125,34 @@ const formatDate = (date) => {
 	return date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '-'
 }
 
+const filterOption = (input, option) => {
+	return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+}
+
+const loadArticleList = () => {
+	bizArticleApi.articleList({}).then((data) => {
+		articleOptions.value = (data || []).map((item) => ({
+			value: item.id,
+			label: item.title
+		}))
+	})
+}
+
 const loadVersionList = () => {
+	if (!searchFormState.articleId) {
+		message.warning('请选择文章')
+		return
+	}
 	loading.value = true
 	bizArticleVersionApi
 		.page({
-			articleId: articleId.value,
+			articleId: searchFormState.articleId,
 			current: pagination.current,
 			size: pagination.pageSize
 		})
 		.then((data) => {
-			versionList.value = data.records
-			pagination.total = data.total
+			versionList.value = data.records || []
+			pagination.total = data.total || 0
 		})
 		.finally(() => {
 			loading.value = false
@@ -105,6 +165,16 @@ const handleTableChange = (pag) => {
 	loadVersionList()
 }
 
+const handleArticleChange = () => {
+	pagination.current = 1
+	if (searchFormState.articleId) {
+		loadVersionList()
+	} else {
+		versionList.value = []
+		pagination.total = 0
+	}
+}
+
 const handlePreview = (record) => {
 	previewData.value = record
 	previewVisible.value = true
@@ -113,32 +183,29 @@ const handlePreview = (record) => {
 const handleRollback = (record) => {
 	bizArticleVersionApi
 		.rollback({
-			articleId: articleId.value,
+			articleId: searchFormState.articleId,
 			versionNumber: record.versionNumber
 		})
 		.then(() => {
 			message.success('回滚成功')
-			emit('successful')
-			onClose()
+			loadVersionList()
 		})
 }
 
-const onOpen = (id) => {
-	articleId.value = id
-	visible.value = true
-	pagination.current = 1
-	loadVersionList()
-}
-
-const onClose = () => {
-	visible.value = false
+const reset = () => {
+	searchFormState.articleId = null
 	versionList.value = []
-	articleId.value = ''
+	pagination.total = 0
+	pagination.current = 1
 }
 
-const emit = defineEmits(['successful'])
+const hasPerm = (perm) => {
+	return tool.data.get('PERMISSIONS')?.includes(perm)
+}
 
-defineExpose({ onOpen })
+onMounted(() => {
+	loadArticleList()
+})
 </script>
 
 <style scoped>

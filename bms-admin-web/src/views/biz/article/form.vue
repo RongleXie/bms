@@ -80,22 +80,22 @@
 					</a-form-item>
 				</a-col>
 			</a-row>
-			<a-row :gutter="16">
-				<a-col :span="8">
-					<a-form-item label="排序" name="sortCode">
-						<a-input-number v-model:value="formData.sortCode" placeholder="请输入排序" class="xn-wd" :min="0" />
-					</a-form-item>
-				</a-col>
-				<a-col :span="8">
-					<a-form-item label="发布方式" name="publishType">
-						<a-radio-group v-model:value="publishType" @change="handlePublishTypeChange">
-							<a-radio value="now">立即发布</a-radio>
-							<a-radio value="scheduled">定时发布</a-radio>
-							<a-radio value="draft">保存草稿</a-radio>
-						</a-radio-group>
-					</a-form-item>
-				</a-col>
-			</a-row>
+<a-row :gutter="16">
+			<a-col :span="6">
+				<a-form-item label="排序" name="sortCode">
+					<a-input-number v-model:value="formData.sortCode" placeholder="请输入排序" class="xn-wd" :min="0" />
+				</a-form-item>
+			</a-col>
+			<a-col :span="18">
+				<a-form-item label="发布方式" name="publishType">
+					<a-radio-group v-model:value="publishType" @change="handlePublishTypeChange">
+						<a-radio value="now">立即发布</a-radio>
+						<a-radio value="scheduled">定时发布</a-radio>
+						<a-radio value="draft">保存草稿</a-radio>
+					</a-radio-group>
+				</a-form-item>
+			</a-col>
+		</a-row>
 			<a-row :gutter="16" v-if="publishType === 'scheduled'">
 				<a-col :span="12">
 					<a-form-item label="计划发布时间" name="scheduledPublishTime">

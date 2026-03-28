@@ -1,0 +1,134 @@
+{
+  "type": "report",
+  "title": "博客管理系统（BMS）数据库设计说明书",
+  "subtitle": "V2.0.0",
+  "author": "BMS团队",
+  "pageSize": "A4",
+  "margins": { "top": 1440, "right": 1440, "bottom": 1440, "left": 1440 },
+  "sections": [
+    {
+      "heading": "1. 概述",
+      "level": 1,
+      "content": [
+        { "type": "paragraph", "text": "本文档详细描述博客管理系统（BMS）的数据库设计，包括表结构、字段定义、索引策略、数据关系等，为开发人员提供数据库开发和维护的参考依据。" },
+        {
+          "heading": "1.1 文档目的",
+          "level": 2,
+          "content": [{ "type": "paragraph", "text": "本文档详细描述博客管理系统（BMS）的数据库设计，包括表结构、字段定义、索引策略、数据关系等，为开发人员提供数据库开发和维护的参考依据。" }]
+        },
+        {
+          "heading": "1.2 系统概述",
+          "level": 2,
+          "content": [{ "type": "paragraph", "text": "BMS 是一个基于 Spring Boot 3.x + Vue 3.x 开发的博客管理系统，采用前后端分离架构，支持文章管理、分类标签、评论互动、媒体资源管理等核心功能。" }]
+        },
+        {
+          "heading": "1.3 技术栈",
+          "level": 2,
+          "content": [
+            {
+              "type": "table",
+              "headers": ["组件", "技术"],
+              "rows": [
+                ["数据库", "MySQL 8.0+"],
+                ["ORM框架", "MyBatis-Plus"],
+                ["连接池", "HikariCP"],
+                ["缓存", "Redis"],
+                ["字符集", "utf8mb4"]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "2. 数据库设计原则",
+      "level": 1,
+      "content": [
+        {
+          "heading": "2.1 命名规范",
+          "level": 2,
+          "content": [
+            { "type": "paragraph", "text": "表名: 大写字母，下划线分隔，如 BMS_ARTICLE" },
+            { "type": "paragraph", "text": "字段名: 大写字母，下划线分隔，如 CREATE_TIME" },
+            { "type": "paragraph", "text": "主键: 统一使用 ID" },
+            { "type": "paragraph", "text": "外键: 关联表名简写 + _ID，如 CATEGORY_ID" },
+            { "type": "paragraph", "text": "索引: IDX_表名_字段名 或 UK_表名_字段名（唯一索引）" }
+          ]
+        },
+        {
+          "heading": "2.2 通用字段",
+          "level": 2,
+          "content": [
+            {
+              "type": "table",
+              "headers": ["字段名", "类型", "说明"],
+              "rows": [
+                ["ID", "VARCHAR(32)", "主键ID"],
+                ["EXT_JSON", "TEXT", "扩展信息JSON"],
+                ["DELETE_FLAG", "VARCHAR(255)", "删除标志"],
+                ["CREATE_TIME", "DATETIME", "创建时间"],
+                ["CREATE_USER", "VARCHAR(32)", "创建人ID"],
+                ["UPDATE_TIME", "DATETIME", "更新时间"],
+                ["UPDATE_USER", "VARCHAR(32)", "更新人ID"]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "4. 核心业务表设计",
+      "level": 1,
+      "content": [
+        {
+          "heading": "4.1 文章表 (BMS_ARTICLE)",
+          "level": 2,
+          "content": [
+            { "type": "paragraph", "text": "存储文章基本信息，是博客系统的核心实体。" },
+            {
+              "type": "table",
+              "headers": ["字段名", "类型", "可空", "说明"],
+              "rows": [
+                ["ID", "VARCHAR(32)", "NOT NULL", "主键ID"],
+                ["TITLE", "VARCHAR(200)", "NOT NULL", "文章标题"],
+                ["SUMMARY", "VARCHAR(500)", "NULL", "文章摘要"],
+                ["CONTENT", "LONGTEXT", "NULL", "文章内容"],
+                ["CATEGORY_ID", "VARCHAR(32)", "NOT NULL", "分类ID"],
+                ["AUTHOR_ID", "VARCHAR(32)", "NOT NULL", "作者ID"],
+                ["STATUS", "VARCHAR(20)", "NULL", "状态：DRAFT/PUBLISHED/SCHEDULED"],
+                ["VIEW_COUNT", "INT", "NULL", "阅读量"],
+                ["LIKE_COUNT", "INT", "NULL", "点赞数"],
+                ["COMMENT_COUNT", "INT", "NULL", "评论数"],
+                ["IS_TOP", "TINYINT", "NULL", "是否置顶"],
+                ["PUBLISH_TIME", "DATETIME", "NULL", "发布时间"],
+                ["SCHEDULED_PUBLISH_TIME", "DATETIME", "NULL", "计划发布时间"]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "7. 数据字典",
+      "level": 1,
+      "content": [
+        {
+          "heading": "7.1 文章状态",
+          "level": 2,
+          "content": [
+            {
+              "type": "table",
+              "headers": ["值", "名称", "说明"],
+              "rows": [
+                ["DRAFT", "草稿", "文章未发布"],
+                ["PUBLISHED", "已发布", "文章已公开发布"],
+                ["SCHEDULED", "待发布", "定时发布中"],
+                ["WITHDRAWN", "已撤回", "文章已撤回"]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

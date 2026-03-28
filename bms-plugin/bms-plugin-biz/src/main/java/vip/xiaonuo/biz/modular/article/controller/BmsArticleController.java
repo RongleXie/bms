@@ -23,6 +23,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vip.xiaonuo.biz.modular.article.entity.BmsArticle;
 import vip.xiaonuo.biz.modular.article.param.BmsArticleAddParam;
@@ -114,5 +115,32 @@ public class BmsArticleController {
     public CommonResult<String> unpublish(@RequestBody @Valid BmsArticleIdParam bmsArticleIdParam) {
         bmsArticleService.unpublish(bmsArticleIdParam);
         return CommonResult.ok();
+    }
+
+    @Operation(summary = "定时发布文章")
+    @CommonLog("定时发布文章")
+    @SaCheckPermission("/biz/article/scheduledPublish")
+    @PostMapping("/biz/article/scheduledPublish")
+    public CommonResult<String> scheduledPublish(@RequestBody @Valid BmsArticleIdParam bmsArticleIdParam,
+                                                  @RequestParam String scheduledTime) {
+        bmsArticleService.scheduledPublish(bmsArticleIdParam, scheduledTime);
+        return CommonResult.ok();
+    }
+
+    @Operation(summary = "取消定时发布")
+    @CommonLog("取消定时发布")
+    @SaCheckPermission("/biz/article/cancelScheduled")
+    @PostMapping("/biz/article/cancelScheduled")
+    public CommonResult<String> cancelScheduled(@RequestBody @Valid BmsArticleIdParam bmsArticleIdParam) {
+        bmsArticleService.cancelScheduled(bmsArticleIdParam);
+        return CommonResult.ok();
+    }
+
+    @Operation(summary = "获取待发布文章列表")
+    @SaCheckPermission("/biz/article/scheduledList")
+    @GetMapping("/biz/article/scheduledList")
+    public CommonResult<Page<BmsArticle>> scheduledList(@RequestParam(defaultValue = "1") Integer current,
+                                                         @RequestParam(defaultValue = "10") Integer size) {
+        return CommonResult.data(bmsArticleService.scheduledList(current, size));
     }
 }

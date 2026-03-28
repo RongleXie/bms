@@ -68,6 +68,21 @@ public class BmsArticleEditParam {
     @Schema(description = "排序码")
     private Integer sortCode;
 
+    @Schema(description = "文章状态 (DRAFT-草稿, PUBLISHED-已发布, SCHEDULED-待发布)")
+    private String status;
+
+    @Schema(description = "计划发布时间")
+    private String scheduledPublishTime;
+
+    @Schema(description = "标签ID列表，逗号分隔")
+    private String tagIds;
+
+    @Schema(description = "作者")
+    private String author;
+
+    @Schema(description = "来源")
+    private String source;
+
     @Schema(description = "扩展信息")
     private String extJson;
 }

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Rong/.claude/plugins/marketplaces/minimax-skills/skills/minimax-docx/**)",
+      "Bash(bash scripts/env_check.sh)",
+      "Bash(powershell -File scripts/env_check.ps1)",
+      "Bash(pip show:*)",
+      "Bash(python generate_report.py)",
+      "Bash(python generate_design_doc.py)",
+      "Bash(ls -la BMS_*.docx)",
+      "Bash(powershell -File scripts/setup.ps1 --minimal)"
+    ]
+  }
+}

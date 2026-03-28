@@ -101,4 +101,34 @@ public interface BmsArticleService extends IService<BmsArticle> {
      * @date 2026/03/24
      */
     void unpublish(BmsArticleIdParam bmsArticleIdParam);
+
+    /**
+     * 定时发布文章
+     *
+     * @param bmsArticleIdParam 文章ID参数
+     * @param scheduledTime 计划发布时间
+     * @author xiaonuo
+     * @date 2026/03/26
+     */
+    void scheduledPublish(BmsArticleIdParam bmsArticleIdParam, String scheduledTime);
+
+    /**
+     * 取消定时发布
+     *
+     * @param bmsArticleIdParam 文章ID参数
+     * @author xiaonuo
+     * @date 2026/03/26
+     */
+    void cancelScheduled(BmsArticleIdParam bmsArticleIdParam);
+
+    /**
+     * 获取待发布文章列表
+     *
+     * @param current 当前页
+     * @param size 每页大小
+     * @return 分页结果
+     * @author xiaonuo
+     * @date 2026/03/26
+     */
+    Page<BmsArticle> scheduledList(Integer current, Integer size);
 }

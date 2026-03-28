@@ -118,7 +118,34 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
             "编辑前自动保存"
         );
         
-        BeanUtil.copyProperties(bmsArticleEditParam, bmsArticle);
+        bmsArticle.setTitle(bmsArticleEditParam.getTitle());
+        bmsArticle.setSummary(bmsArticleEditParam.getSummary());
+        bmsArticle.setContent(bmsArticleEditParam.getContent());
+        bmsArticle.setCoverImage(bmsArticleEditParam.getCoverImage());
+        bmsArticle.setCategoryId(bmsArticleEditParam.getCategoryId());
+        bmsArticle.setIsTop(bmsArticleEditParam.getIsTop());
+        bmsArticle.setIsRecommend(bmsArticleEditParam.getIsRecommend());
+        bmsArticle.setAllowComment(bmsArticleEditParam.getAllowComment());
+        bmsArticle.setSeoKeywords(bmsArticleEditParam.getSeoKeywords());
+        bmsArticle.setSeoDescription(bmsArticleEditParam.getSeoDescription());
+        bmsArticle.setSortCode(bmsArticleEditParam.getSortCode());
+        bmsArticle.setExtJson(bmsArticleEditParam.getExtJson());
+        
+        if (StrUtil.isNotBlank(bmsArticleEditParam.getStatus())) {
+            bmsArticle.setStatus(bmsArticleEditParam.getStatus());
+            if ("PUBLISHED".equals(bmsArticleEditParam.getStatus()) && bmsArticle.getPublishTime() == null) {
+                bmsArticle.setPublishTime(new Date());
+            }
+        }
+        
+        if (StrUtil.isNotBlank(bmsArticleEditParam.getScheduledPublishTime())) {
+            bmsArticle.setScheduledPublishTime(
+                cn.hutool.core.date.DateUtil.parse(bmsArticleEditParam.getScheduledPublishTime())
+            );
+        } else if ("PUBLISHED".equals(bmsArticle.getStatus()) || "DRAFT".equals(bmsArticle.getStatus())) {
+            bmsArticle.setScheduledPublishTime(null);
+        }
+        
         this.updateById(bmsArticle);
     }
 
@@ -166,5 +193,46 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
                 bmsArticleIdParam.getId())
                 .set(BmsArticle::getStatus, BmsArticleStatusEnum.DRAFT.getValue())
                 .set(BmsArticle::getPublishTime, null));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void scheduledPublish(BmsArticleIdParam bmsArticleIdParam, String scheduledTime) {
+        BmsArticle bmsArticle = this.queryEntity(bmsArticleIdParam.getId());
+        if(BmsArticleStatusEnum.PUBLISHED.getValue().equals(bmsArticle.getStatus())) {
+            throw new CommonException("文章已发布，无法设置定时发布");
+        }
+        Date scheduledDate = cn.hutool.core.date.DateUtil.parse(scheduledTime);
+        if(scheduledDate.before(new Date())) {
+            throw new CommonException("计划发布时间不能早于当前时间");
+        }
+        this.update(new LambdaUpdateWrapper<BmsArticle>()
+                .eq(BmsArticle::getId, bmsArticleIdParam.getId())
+                .set(BmsArticle::getStatus, BmsArticleStatusEnum.SCHEDULED.getValue())
+                .set(BmsArticle::getScheduledPublishTime, scheduledDate));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void cancelScheduled(BmsArticleIdParam bmsArticleIdParam) {
+        BmsArticle bmsArticle = this.queryEntity(bmsArticleIdParam.getId());
+        if(!BmsArticleStatusEnum.SCHEDULED.getValue().equals(bmsArticle.getStatus())) {
+            throw new CommonException("文章未设置定时发布");
+        }
+        this.update(new LambdaUpdateWrapper<BmsArticle>()
+                .eq(BmsArticle::getId, bmsArticleIdParam.getId())
+                .set(BmsArticle::getStatus, BmsArticleStatusEnum.DRAFT.getValue())
+                .set(BmsArticle::getScheduledPublishTime, null));
+    }
+
+    @Override
+    public Page<BmsArticle> scheduledList(Integer current, Integer size) {
+        QueryWrapper<BmsArticle> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lambda()
+                .eq(BmsArticle::getStatus, BmsArticleStatusEnum.SCHEDULED.getValue())
+                .isNotNull(BmsArticle::getScheduledPublishTime)
+                .orderByAsc(BmsArticle::getScheduledPublishTime);
+        Page<BmsArticle> page = new Page<>(current, size);
+        return this.page(page, queryWrapper);
     }
 }
