@@ -13,6 +13,9 @@
 package vip.xiaonuo.biz.modular.tag.param;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,21 +38,27 @@ public class BmsTagEditParam {
     /** 标签名称 */
     @Schema(description = "标签名称", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "name不能为空")
+    @Size(max = 50, message = "标签名称长度不能超过50字符")
     private String name;
 
     /** 标签编码 */
     @Schema(description = "标签编码")
+    @Size(max = 50, message = "标签编码长度不能超过50字符")
     private String code;
 
     /** 标签颜色 */
     @Schema(description = "标签颜色")
+    @Size(max = 20, message = "标签颜色长度不能超过20字符")
     private String color;
 
     /** 标签描述 */
     @Schema(description = "标签描述")
+    @Size(max = 500, message = "标签描述长度不能超过500字符")
     private String description;
 
     /** 排序码 */
     @Schema(description = "排序码")
+    @Min(value = 0, message = "排序码不能小于0")
+    @Max(value = 99999, message = "排序码不能大于99999")
     private Integer sortCode;
 }

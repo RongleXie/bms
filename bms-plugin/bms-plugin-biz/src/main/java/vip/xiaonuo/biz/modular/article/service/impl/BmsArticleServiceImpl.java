@@ -96,6 +96,12 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void add(BmsArticleAddParam bmsArticleAddParam) {
+        // 校验文章标题唯一性
+        long count = this.count(new QueryWrapper<BmsArticle>().lambda()
+            .eq(BmsArticle::getTitle, bmsArticleAddParam.getTitle()));
+        if(count > 0) {
+            throw new CommonException("文章标题已存在：{}", bmsArticleAddParam.getTitle());
+        }
         BmsArticle bmsArticle = BeanUtil.toBean(bmsArticleAddParam, BmsArticle.class);
         bmsArticle.setAuthorId(StpUtil.getLoginIdAsString());
         bmsArticle.setStatus(BmsArticleStatusEnum.DRAFT.getValue());
@@ -109,6 +115,14 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public void edit(BmsArticleEditParam bmsArticleEditParam) {
         BmsArticle bmsArticle = this.queryEntity(bmsArticleEditParam.getId());
+        
+        // 校验文章标题唯一性（排除自身）
+        long count = this.count(new QueryWrapper<BmsArticle>().lambda()
+            .eq(BmsArticle::getTitle, bmsArticleEditParam.getTitle())
+            .ne(BmsArticle::getId, bmsArticleEditParam.getId()));
+        if(count > 0) {
+            throw new CommonException("文章标题已存在：{}", bmsArticleEditParam.getTitle());
+        }
         
         articleVersionService.saveVersion(
             bmsArticle.getId(),

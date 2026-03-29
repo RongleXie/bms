@@ -137,7 +137,9 @@
 						islogin.value = false
 					})
 			})
-			.catch(() => {})
+			.catch((error) => {
+				message.error('请检查输入信息：' + (error.message || '未知错误'))
+			})
 	}
 
 	// 弹框的

@@ -90,6 +90,14 @@ public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> i
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void add(BmsMediaAddParam bmsMediaAddParam) {
+        // 校验文件名唯一性
+        if(ObjectUtil.isNotEmpty(bmsMediaAddParam.getFileName())) {
+            long count = this.count(new QueryWrapper<BmsMedia>().lambda()
+                .eq(BmsMedia::getFileName, bmsMediaAddParam.getFileName()));
+            if(count > 0) {
+                throw new CommonException("文件名已存在：{}", bmsMediaAddParam.getFileName());
+            }
+        }
         BmsMedia bmsMedia = BeanUtil.toBean(bmsMediaAddParam, BmsMedia.class);
         // 默认状态为启用
         if(ObjectUtil.isEmpty(bmsMedia.getStatus())) {
@@ -106,6 +114,15 @@ public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> i
     @Override
     public void edit(BmsMediaEditParam bmsMediaEditParam) {
         BmsMedia bmsMedia = this.queryEntity(bmsMediaEditParam.getId());
+        // 校验文件名唯一性（排除自身）
+        if(ObjectUtil.isNotEmpty(bmsMediaEditParam.getFileName())) {
+            long count = this.count(new QueryWrapper<BmsMedia>().lambda()
+                .eq(BmsMedia::getFileName, bmsMediaEditParam.getFileName())
+                .ne(BmsMedia::getId, bmsMediaEditParam.getId()));
+            if(count > 0) {
+                throw new CommonException("文件名已存在：{}", bmsMediaEditParam.getFileName());
+            }
+        }
         BeanUtil.copyProperties(bmsMediaEditParam, bmsMedia);
         this.updateById(bmsMedia);
     }

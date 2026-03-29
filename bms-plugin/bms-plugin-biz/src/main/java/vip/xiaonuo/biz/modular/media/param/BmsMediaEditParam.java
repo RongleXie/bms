@@ -13,6 +13,9 @@
 package vip.xiaonuo.biz.modular.media.param;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,54 +38,69 @@ public class BmsMediaEditParam {
     /** 文件名称 */
     @Schema(description = "文件名称", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "fileName不能为空")
+    @Size(max = 200, message = "文件名长度不能超过200字符")
     private String fileName;
 
     /** 原始文件名 */
     @Schema(description = "原始文件名")
+    @Size(max = 200, message = "原始文件名长度不能超过200字符")
     private String originalName;
 
     /** 文件路径 */
     @Schema(description = "文件路径", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "filePath不能为空")
+    @Size(max = 500, message = "文件路径长度不能超过500字符")
     private String filePath;
 
     /** 文件访问URL */
     @Schema(description = "文件访问URL")
+    @Size(max = 500, message = "文件URL长度不能超过500字符")
     private String fileUrl;
 
     /** 文件大小(字节) */
     @Schema(description = "文件大小(字节)")
+    @Min(value = 0, message = "文件大小不能小于0")
     private Long fileSize;
 
     /** 文件类型 */
     @Schema(description = "文件类型 (IMAGE/VIDEO/AUDIO/DOCUMENT/OTHER)")
+    @Size(max = 20, message = "文件类型长度不能超过20字符")
     private String fileType;
 
     /** MIME类型 */
     @Schema(description = "MIME类型")
+    @Size(max = 100, message = "MIME类型长度不能超过100字符")
     private String mimeType;
 
     /** 文件扩展名 */
     @Schema(description = "文件扩展名")
+    @Size(max = 10, message = "文件扩展名长度不能超过10字符")
     private String fileExt;
 
     /** 缩略图URL */
     @Schema(description = "缩略图URL")
+    @Size(max = 500, message = "缩略图URL长度不能超过500字符")
     private String thumbnailUrl;
 
     /** 图片宽度 */
     @Schema(description = "图片宽度")
+    @Min(value = 0, message = "图片宽度不能小于0")
+    @Max(value = 99999, message = "图片宽度不能超过99999")
     private Integer width;
 
     /** 图片高度 */
     @Schema(description = "图片高度")
+    @Min(value = 0, message = "图片高度不能小于0")
+    @Max(value = 99999, message = "图片高度不能超过99999")
     private Integer height;
 
     /** 音视频时长(秒) */
     @Schema(description = "音视频时长(秒)")
+    @Min(value = 0, message = "时长不能小于0")
     private Integer duration;
 
     /** 扩展信息JSON */
     @Schema(description = "扩展信息JSON")
+    @Size(max = 2000, message = "扩展信息JSON长度不能超过2000字符")
     private String extJson;
 }

@@ -106,6 +106,14 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void add(BmsCategoryAddParam bmsCategoryAddParam) {
+        // 校验分类名称唯一性（同父级下）
+        long count = this.count(new QueryWrapper<BmsCategory>().lambda()
+            .eq(BmsCategory::getName, bmsCategoryAddParam.getName())
+            .eq(BmsCategory::getParentId, ObjectUtil.isEmpty(bmsCategoryAddParam.getParentId()) ? "0" : bmsCategoryAddParam.getParentId()));
+        if(count > 0) {
+            throw new CommonException("分类名称已存在：{}", bmsCategoryAddParam.getName());
+        }
+
         BmsCategory bmsCategory = BeanUtil.toBean(bmsCategoryAddParam, BmsCategory.class);
         if(ObjectUtil.isEmpty(bmsCategory.getParentId())) {
             bmsCategory.setParentId("0");
@@ -118,6 +126,17 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
     @Override
     public void edit(BmsCategoryEditParam bmsCategoryEditParam) {
         BmsCategory bmsCategory = this.queryEntity(bmsCategoryEditParam.getId());
+
+        // 校验分类名称唯一性（同父级下，排除自身）
+        String parentId = ObjectUtil.isEmpty(bmsCategoryEditParam.getParentId()) ? "0" : bmsCategoryEditParam.getParentId();
+        long count = this.count(new QueryWrapper<BmsCategory>().lambda()
+            .eq(BmsCategory::getName, bmsCategoryEditParam.getName())
+            .eq(BmsCategory::getParentId, parentId)
+            .ne(BmsCategory::getId, bmsCategoryEditParam.getId()));
+        if(count > 0) {
+            throw new CommonException("分类名称已存在：{}", bmsCategoryEditParam.getName());
+        }
+
         BeanUtil.copyProperties(bmsCategoryEditParam, bmsCategory);
         this.updateById(bmsCategory);
     }

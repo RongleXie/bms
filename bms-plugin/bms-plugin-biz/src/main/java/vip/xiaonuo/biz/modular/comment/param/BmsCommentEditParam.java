@@ -13,6 +13,8 @@
 package vip.xiaonuo.biz.modular.comment.param;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,16 +29,21 @@ public class BmsCommentEditParam {
 
     @Schema(description = "评论者昵称", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "nickname不能为空")
+    @Size(max = 50, message = "昵称长度不能超过50字符")
     private String nickname;
 
     @Schema(description = "评论者邮箱")
+    @Size(max = 100, message = "邮箱长度不能超过100字符")
+    @Email(message = "邮箱格式不正确")
     private String email;
 
     @Schema(description = "评论者网站")
+    @Size(max = 200, message = "网站URL长度不能超过200字符")
     private String website;
 
     @Schema(description = "评论内容", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "content不能为空")
+    @Size(max = 2000, message = "评论内容长度不能超过2000字符")
     private String content;
 
     @Schema(description = "状态")

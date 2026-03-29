@@ -13,6 +13,9 @@
 package vip.xiaonuo.biz.modular.category.param;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,17 +29,23 @@ public class BmsCategoryAddParam {
 
     @Schema(description = "分类名称", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "name不能为空")
+    @Size(max = 50, message = "分类名称长度不能超过50字符")
     private String name;
 
     @Schema(description = "分类编码")
+    @Size(max = 50, message = "分类编码长度不能超过50字符")
     private String code;
 
     @Schema(description = "分类描述")
+    @Size(max = 200, message = "分类描述长度不能超过200字符")
     private String description;
 
     @Schema(description = "分类图标")
+    @Size(max = 200, message = "图标URL长度不能超过200字符")
     private String icon;
 
     @Schema(description = "排序码")
+    @Min(value = 0, message = "排序码不能小于0")
+    @Max(value = 999999, message = "排序码不能大于999999")
     private Integer sortCode;
 }

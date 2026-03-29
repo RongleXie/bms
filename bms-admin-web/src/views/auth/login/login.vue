@@ -143,6 +143,7 @@
 </template>
 <script setup>
 	import loginApi from '@/api/auth/loginApi'
+	import { message } from 'ant-design-vue'
 	const PhoneLoginForm = defineAsyncComponent(() => import('./phoneLoginForm.vue'))
 	const EmailLoginForm = defineAsyncComponent(() => import('./emailLoginForm.vue'))
 	const OtpLoginForm = defineAsyncComponent(() => import('./otpLoginForm.vue'))
@@ -246,7 +247,9 @@
 					}
 				}
 			})
-			.catch(() => {})
+			.catch((error) => {
+				message.error('加载系统配置失败：' + (error.message || '未知错误'))
+			})
 	})
 
 	onBeforeMount(() => {

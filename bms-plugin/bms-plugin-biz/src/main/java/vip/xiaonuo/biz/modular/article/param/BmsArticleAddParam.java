@@ -13,6 +13,9 @@
 package vip.xiaonuo.biz.modular.article.param;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,36 +32,50 @@ public class BmsArticleAddParam {
 
     @Schema(description = "文章标题", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "title不能为空")
+    @Size(max = 200, message = "标题长度不能超过200字符")
     private String title;
 
     @Schema(description = "文章摘要")
+    @Size(max = 500, message = "摘要长度不能超过500字符")
     private String summary;
 
     @Schema(description = "文章内容")
+    @Size(max = 100000, message = "内容长度不能超过100000字符")
     private String content;
 
     @Schema(description = "封面图片URL")
+    @Size(max = 500, message = "封面图片URL长度不能超过500字符")
     private String coverImage;
 
     @Schema(description = "分类ID")
     private String categoryId;
 
     @Schema(description = "是否置顶 (0-否, 1-是)")
+    @Min(value = 0, message = "是否置顶值必须为0或1")
+    @Max(value = 1, message = "是否置顶值必须为0或1")
     private Integer isTop;
 
     @Schema(description = "是否推荐 (0-否, 1-是)")
+    @Min(value = 0, message = "是否推荐值必须为0或1")
+    @Max(value = 1, message = "是否推荐值必须为0或1")
     private Integer isRecommend;
 
     @Schema(description = "允许评论 (0-否, 1-是)")
+    @Min(value = 0, message = "允许评论值必须为0或1")
+    @Max(value = 1, message = "允许评论值必须为0或1")
     private Integer allowComment;
 
     @Schema(description = "SEO关键词")
+    @Size(max = 200, message = "SEO关键词长度不能超过200字符")
     private String seoKeywords;
 
     @Schema(description = "SEO描述")
+    @Size(max = 500, message = "SEO描述长度不能超过500字符")
     private String seoDescription;
 
     @Schema(description = "排序码")
+    @Min(value = 0, message = "排序码不能小于0")
+    @Max(value = 999999, message = "排序码不能大于999999")
     private Integer sortCode;
 
     @Schema(description = "扩展信息")

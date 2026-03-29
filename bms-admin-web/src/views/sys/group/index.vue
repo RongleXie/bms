@@ -123,7 +123,7 @@
 		alert: {
 			show: false,
 			clear: () => {
-				selectedRowKeys.value = ref([])
+				selectedRowKeys.value = []
 			}
 		},
 		rowSelection: {

@@ -132,7 +132,7 @@
 		alert: {
 			show: false,
 			clear: () => {
-				selectedRowKeys.value = ref([])
+				selectedRowKeys.value = []
 			}
 		},
 		rowSelection: {
@@ -157,13 +157,19 @@
 	const deleteBizComment = (record) => {
 		let params = [{ id: record.id }]
 		bizCommentApi.commentDelete(params).then(() => {
+			message.success('删除成功')
 			tableRef.value.refresh(true)
+		}).catch((error) => {
+			message.error('删除失败：' + (error.message || '未知错误'))
 		})
 	}
 
 	const deleteBatchBizComment = (params) => {
 		bizCommentApi.commentDelete(params).then(() => {
+			message.success('批量删除成功')
 			tableRef.value.clearRefreshSelected()
+		}).catch((error) => {
+			message.error('批量删除失败：' + (error.message || '未知错误'))
 		})
 	}
 
@@ -184,7 +190,10 @@
 
 	const auditComment = (record, auditStatus) => {
 		bizCommentApi.commentAudit({ id: record.id, auditStatus }).then(() => {
+			message.success(auditStatus === 'PASS' ? '审核通过' : '已拒绝')
 			tableRef.value.refresh()
+		}).catch((error) => {
+			message.error('操作失败：' + (error.message || '未知错误'))
 		})
 	}
 

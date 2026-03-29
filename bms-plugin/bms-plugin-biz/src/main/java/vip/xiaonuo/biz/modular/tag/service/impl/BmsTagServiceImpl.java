@@ -86,6 +86,12 @@ public class BmsTagServiceImpl extends ServiceImpl<BmsTagMapper, BmsTag> impleme
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void add(BmsTagAddParam bmsTagAddParam) {
+        // 校验标签名称唯一性
+        long count = this.count(new QueryWrapper<BmsTag>().lambda()
+            .eq(BmsTag::getName, bmsTagAddParam.getName()));
+        if(count > 0) {
+            throw new CommonException("标签名称已存在：{}", bmsTagAddParam.getName());
+        }
         BmsTag bmsTag = BeanUtil.toBean(bmsTagAddParam, BmsTag.class);
         bmsTag.setStatus(BmsTagStatusEnum.ENABLE.getValue());
         this.save(bmsTag);
@@ -95,6 +101,13 @@ public class BmsTagServiceImpl extends ServiceImpl<BmsTagMapper, BmsTag> impleme
     @Override
     public void edit(BmsTagEditParam bmsTagEditParam) {
         BmsTag bmsTag = this.queryEntity(bmsTagEditParam.getId());
+        // 校验标签名称唯一性（排除自身）
+        long count = this.count(new QueryWrapper<BmsTag>().lambda()
+            .eq(BmsTag::getName, bmsTagEditParam.getName())
+            .ne(BmsTag::getId, bmsTagEditParam.getId()));
+        if(count > 0) {
+            throw new CommonException("标签名称已存在：{}", bmsTagEditParam.getName());
+        }
         BeanUtil.copyProperties(bmsTagEditParam, bmsTag);
         this.updateById(bmsTag);
     }

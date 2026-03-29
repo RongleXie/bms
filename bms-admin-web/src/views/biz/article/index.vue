@@ -232,7 +232,7 @@
 		alert: {
 			show: false,
 			clear: () => {
-				selectedRowKeys.value = ref([])
+				selectedRowKeys.value = []
 			}
 		},
 		rowSelection: {
@@ -262,13 +262,19 @@
 	const deleteBizArticle = (record) => {
 		let params = [{ id: record.id }]
 		bizArticleApi.articleDelete(params).then(() => {
+			message.success('删除成功')
 			tableRef.value.refresh(true)
+		}).catch((error) => {
+			message.error('删除失败：' + (error.message || '未知错误'))
 		})
 	}
 
 	const deleteBatchBizArticle = (params) => {
 		bizArticleApi.articleDelete(params).then(() => {
+			message.success('批量删除成功')
 			tableRef.value.clearRefreshSelected()
+		}).catch((error) => {
+			message.error('批量删除失败：' + (error.message || '未知错误'))
 		})
 	}
 
