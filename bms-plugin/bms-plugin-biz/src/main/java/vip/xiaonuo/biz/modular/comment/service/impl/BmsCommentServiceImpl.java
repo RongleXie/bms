@@ -32,6 +32,7 @@ import vip.xiaonuo.biz.modular.comment.service.BmsCommentService;
 import vip.xiaonuo.common.enums.CommonSortOrderEnum;
 import vip.xiaonuo.common.exception.CommonException;
 import vip.xiaonuo.common.page.CommonPageRequest;
+import vip.xiaonuo.common.util.CommonSqlUtil;
 
 import java.util.Date;
 import java.util.List;
@@ -48,6 +49,7 @@ public class BmsCommentServiceImpl extends ServiceImpl<BmsCommentMapper, BmsComm
     @Override
     public Page<BmsComment> page(BmsCommentPageParam bmsCommentPageParam) {
         QueryWrapper<BmsComment> queryWrapper = new QueryWrapper<BmsComment>().checkSqlInjection();
+        queryWrapper.select("ID", "ARTICLE_ID", "PARENT_ID", "NICKNAME", "CONTENT", "STATUS", "LIKE_COUNT", "CREATE_TIME", "UPDATE_TIME");
         if(ObjectUtil.isNotEmpty(bmsCommentPageParam.getSearchKey())) {
             queryWrapper.lambda().like(BmsComment::getContent, bmsCommentPageParam.getSearchKey());
         }
@@ -62,6 +64,7 @@ public class BmsCommentServiceImpl extends ServiceImpl<BmsCommentMapper, BmsComm
         }
         if(ObjectUtil.isAllNotEmpty(bmsCommentPageParam.getSortField(), bmsCommentPageParam.getSortOrder())) {
             CommonSortOrderEnum.validate(bmsCommentPageParam.getSortOrder());
+            CommonSqlUtil.validateSortField(bmsCommentPageParam.getSortField());
             queryWrapper.orderBy(true, bmsCommentPageParam.getSortOrder().equals(CommonSortOrderEnum.ASC.getValue()),
                     StrUtil.toUnderlineCase(bmsCommentPageParam.getSortField()));
         } else {
@@ -73,6 +76,7 @@ public class BmsCommentServiceImpl extends ServiceImpl<BmsCommentMapper, BmsComm
     @Override
     public List<BmsComment> list(BmsCommentPageParam bmsCommentPageParam) {
         QueryWrapper<BmsComment> queryWrapper = new QueryWrapper<BmsComment>().checkSqlInjection();
+        queryWrapper.select("ID", "ARTICLE_ID", "PARENT_ID", "NICKNAME", "CONTENT", "STATUS", "LIKE_COUNT", "CREATE_TIME");
         if(ObjectUtil.isNotEmpty(bmsCommentPageParam.getArticleId())) {
             queryWrapper.lambda().eq(BmsComment::getArticleId, bmsCommentPageParam.getArticleId());
         }
@@ -80,6 +84,7 @@ public class BmsCommentServiceImpl extends ServiceImpl<BmsCommentMapper, BmsComm
             queryWrapper.lambda().eq(BmsComment::getStatus, bmsCommentPageParam.getStatus());
         }
         queryWrapper.lambda().orderByDesc(BmsComment::getCreateTime);
+        queryWrapper.last("LIMIT 1000");
         return this.list(queryWrapper);
     }
 

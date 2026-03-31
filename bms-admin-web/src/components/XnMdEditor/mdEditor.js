@@ -42,11 +42,35 @@ import 'codemirror/lib/codemirror.css'
 import VMdPreview from '@kangc/v-md-editor/lib/preview'
 import '@kangc/v-md-editor/lib/style/preview.css'
 
+import { computed, h } from 'vue'
+
+// XSS过滤工具
+import { filterMarkdown } from '@/utils/xssUtil'
+
 const XnMdEditor = VMdEditor
 XnMdEditor.Codemirror = Codemirror
 
 VMdPreview.use(githubTheme)
-const XnMdPreview = VMdPreview
+
+// XSS安全渲染包装器
+const XnMdPreviewSafe = {
+	name: 'XnMdPreview',
+	props: {
+		text: {
+			type: String,
+			default: ''
+		}
+	},
+	setup(props) {
+		const safeText = computed(() => filterMarkdown(props.text))
+		return { safeText }
+	},
+	render() {
+		return h(VMdPreview, { text: this.safeText })
+	}
+}
+
+const XnMdPreview = XnMdPreviewSafe
 
 XnMdEditor.use(githubTheme, {
 	Hljs: hljsVuePlugin

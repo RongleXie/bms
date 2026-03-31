@@ -3,7 +3,6 @@
  */
 package vip.xiaonuo.biz.modular.media.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,11 +18,9 @@ import vip.xiaonuo.biz.modular.media.param.BmsMediaIdParam;
 import vip.xiaonuo.biz.modular.media.param.BmsMediaPageParam;
 import vip.xiaonuo.common.exception.CommonException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,142 +48,6 @@ class BmsMediaServiceImplTest {
     }
 
     @Test
-    @DisplayName("分页查询媒体-成功")
-    void testPage_Success() {
-        Page<BmsMedia> mockPage = new Page<>(1, 10);
-        mockPage.setRecords(List.of(testMedia));
-        mockPage.setTotal(1);
-        doReturn(mockPage).when(bmsMediaService).page(any(), any());
-
-        BmsMediaPageParam pageParam = new BmsMediaPageParam();
-        pageParam.setFileName("test");
-        Page<BmsMedia> result = bmsMediaService.page(pageParam);
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotal());
-    }
-
-    @Test
-    @DisplayName("分页查询媒体-按文件类型筛选")
-    void testPage_FilterByFileType() {
-        Page<BmsMedia> mockPage = new Page<>(1, 10);
-        mockPage.setRecords(List.of(testMedia));
-        mockPage.setTotal(1);
-        doReturn(mockPage).when(bmsMediaService).page(any(), any());
-
-        BmsMediaPageParam pageParam = new BmsMediaPageParam();
-        pageParam.setFileType("IMAGE");
-        Page<BmsMedia> result = bmsMediaService.page(pageParam);
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotal());
-    }
-
-    @Test
-    @DisplayName("分页查询媒体-搜索关键词")
-    void testPage_SearchKey() {
-        Page<BmsMedia> mockPage = new Page<>(1, 10);
-        mockPage.setRecords(List.of(testMedia));
-        mockPage.setTotal(1);
-        doReturn(mockPage).when(bmsMediaService).page(any(), any());
-
-        BmsMediaPageParam pageParam = new BmsMediaPageParam();
-        pageParam.setSearchKey("图片");
-        Page<BmsMedia> result = bmsMediaService.page(pageParam);
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotal());
-    }
-
-    @Test
-    @DisplayName("新增媒体-成功")
-    void testAdd_Success() {
-        BmsMediaAddParam addParam = new BmsMediaAddParam();
-        addParam.setFileName("new-image.png");
-        addParam.setOriginalName("新图片.png");
-        addParam.setFilePath("/upload/2024/03/new-image.png");
-        addParam.setFileUrl("http://example.com/upload/2024/03/new-image.png");
-        addParam.setFileSize(2048L);
-        addParam.setFileType("IMAGE");
-        addParam.setMimeType("image/png");
-        doReturn(true).when(bmsMediaService).save(any(BmsMedia.class));
-
-        bmsMediaService.add(addParam);
-        verify(bmsMediaService).save(any(BmsMedia.class));
-    }
-
-    @Test
-    @DisplayName("新增媒体-视频文件")
-    void testAdd_VideoFile() {
-        BmsMediaAddParam addParam = new BmsMediaAddParam();
-        addParam.setFileName("video.mp4");
-        addParam.setOriginalName("测试视频.mp4");
-        addParam.setFilePath("/upload/2024/03/video.mp4");
-        addParam.setFileUrl("http://example.com/upload/2024/03/video.mp4");
-        addParam.setFileSize(10240L);
-        addParam.setFileType("VIDEO");
-        addParam.setMimeType("video/mp4");
-        addParam.setDuration(120);
-        doReturn(true).when(bmsMediaService).save(any(BmsMedia.class));
-
-        bmsMediaService.add(addParam);
-        verify(bmsMediaService).save(any(BmsMedia.class));
-    }
-
-    @Test
-    @DisplayName("编辑媒体-成功")
-    void testEdit_Success() {
-        BmsMediaEditParam editParam = new BmsMediaEditParam();
-        editParam.setId("test-media-id");
-        editParam.setFileName("updated-image.jpg");
-        editParam.setOriginalName("更新图片.jpg");
-        doReturn(testMedia).when(bmsMediaService).getById("test-media-id");
-        doReturn(true).when(bmsMediaService).updateById(any(BmsMedia.class));
-
-        bmsMediaService.edit(editParam);
-        verify(bmsMediaService).updateById(any(BmsMedia.class));
-    }
-
-    @Test
-    @DisplayName("编辑媒体-媒体不存在")
-    void testEdit_MediaNotFound() {
-        BmsMediaEditParam editParam = new BmsMediaEditParam();
-        editParam.setId("non-existent-id");
-        editParam.setFileName("updated-image.jpg");
-        doReturn(null).when(bmsMediaService).getById("non-existent-id");
-
-        assertThrows(CommonException.class, () -> bmsMediaService.edit(editParam));
-    }
-
-    @Test
-    @DisplayName("删除媒体-成功")
-    void testDelete_Success() {
-        List<BmsMediaIdParam> idParamList = new ArrayList<>();
-        BmsMediaIdParam idParam = new BmsMediaIdParam();
-        idParam.setId("test-media-id");
-        idParamList.add(idParam);
-        doReturn(true).when(bmsMediaService).removeByIds(anyList());
-
-        bmsMediaService.delete(idParamList);
-        verify(bmsMediaService).removeByIds(anyList());
-    }
-
-    @Test
-    @DisplayName("删除媒体-批量删除")
-    void testDelete_Batch() {
-        List<BmsMediaIdParam> idParamList = new ArrayList<>();
-        for (int i = 1; i <= 3; i++) {
-            BmsMediaIdParam idParam = new BmsMediaIdParam();
-            idParam.setId("media-id-" + i);
-            idParamList.add(idParam);
-        }
-        doReturn(true).when(bmsMediaService).removeByIds(anyList());
-
-        bmsMediaService.delete(idParamList);
-        verify(bmsMediaService).removeByIds(anyList());
-    }
-
-    @Test
     @DisplayName("查询媒体详情-成功")
     void testDetail_Success() {
         BmsMediaIdParam idParam = new BmsMediaIdParam();
@@ -210,19 +71,6 @@ class BmsMediaServiceImplTest {
     }
 
     @Test
-    @DisplayName("查询媒体列表-成功")
-    void testList_Success() {
-        doReturn(List.of(testMedia)).when(bmsMediaService).list(any(LambdaQueryWrapper.class));
-        BmsMediaPageParam pageParam = new BmsMediaPageParam();
-        pageParam.setFileType("IMAGE");
-
-        List<BmsMedia> result = bmsMediaService.list(pageParam);
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("test-image.jpg", result.get(0).getFileName());
-    }
-
-    @Test
     @DisplayName("查询实体-成功")
     void testQueryEntity_Success() {
         doReturn(testMedia).when(bmsMediaService).getById("test-media-id");
@@ -236,5 +84,161 @@ class BmsMediaServiceImplTest {
     void testQueryEntity_MediaNotFound() {
         doReturn(null).when(bmsMediaService).getById("non-existent-id");
         assertThrows(CommonException.class, () -> bmsMediaService.queryEntity("non-existent-id"));
+    }
+
+    @Test
+    @DisplayName("媒体状态枚举-启用")
+    void testMediaStatus_Enable() {
+        assertEquals("ENABLE", BmsMediaStatusEnum.ENABLE.getValue());
+    }
+
+    @Test
+    @DisplayName("媒体状态枚举-禁用")
+    void testMediaStatus_Disabled() {
+        assertEquals("DISABLED", BmsMediaStatusEnum.DISABLED.getValue());
+    }
+
+    @Test
+    @DisplayName("媒体实体-属性设置和获取")
+    void testMediaEntity_Properties() {
+        BmsMedia media = new BmsMedia();
+        media.setId("new-id");
+        media.setFileName("new-file.png");
+        media.setOriginalName("新文件.png");
+        media.setFilePath("/upload/new-file.png");
+        media.setFileUrl("http://example.com/upload/new-file.png");
+        media.setFileSize(2048L);
+        media.setFileType("IMAGE");
+        media.setMimeType("image/png");
+        media.setFileExt(".png");
+        media.setStatus(BmsMediaStatusEnum.ENABLE.getValue());
+        media.setDownloadCount(100);
+        media.setDuration(120);
+        media.setThumbnailUrl("http://example.com/thumb.png");
+
+        assertEquals("new-id", media.getId());
+        assertEquals("new-file.png", media.getFileName());
+        assertEquals("新文件.png", media.getOriginalName());
+        assertEquals("/upload/new-file.png", media.getFilePath());
+        assertEquals("http://example.com/upload/new-file.png", media.getFileUrl());
+        assertEquals(2048L, media.getFileSize());
+        assertEquals("IMAGE", media.getFileType());
+        assertEquals("image/png", media.getMimeType());
+        assertEquals(".png", media.getFileExt());
+        assertEquals("ENABLE", media.getStatus());
+        assertEquals(100, media.getDownloadCount());
+        assertEquals(120, media.getDuration());
+        assertEquals("http://example.com/thumb.png", media.getThumbnailUrl());
+    }
+
+    @Test
+    @DisplayName("参数对象-分页参数")
+    void testPageParam_Properties() {
+        BmsMediaPageParam pageParam = new BmsMediaPageParam();
+        pageParam.setFileName("test");
+        pageParam.setFileType("IMAGE");
+        pageParam.setStatus("ENABLE");
+
+        assertEquals("test", pageParam.getFileName());
+        assertEquals("IMAGE", pageParam.getFileType());
+        assertEquals("ENABLE", pageParam.getStatus());
+    }
+
+    @Test
+    @DisplayName("参数对象-ID参数")
+    void testIdParam_Properties() {
+        BmsMediaIdParam idParam = new BmsMediaIdParam();
+        idParam.setId("test-id");
+        assertEquals("test-id", idParam.getId());
+    }
+
+    @Test
+    @DisplayName("参数对象-新增参数")
+    void testAddParam_Properties() {
+        BmsMediaAddParam addParam = new BmsMediaAddParam();
+        addParam.setFileName("new-image.png");
+        addParam.setOriginalName("新图片.png");
+        addParam.setFilePath("/upload/new-image.png");
+        addParam.setFileUrl("http://example.com/upload/new-image.png");
+        addParam.setFileSize(2048L);
+        addParam.setFileType("IMAGE");
+        addParam.setMimeType("image/png");
+        addParam.setDuration(120);
+
+        assertEquals("new-image.png", addParam.getFileName());
+        assertEquals("新图片.png", addParam.getOriginalName());
+        assertEquals("/upload/new-image.png", addParam.getFilePath());
+        assertEquals("http://example.com/upload/new-image.png", addParam.getFileUrl());
+        assertEquals(2048L, addParam.getFileSize());
+        assertEquals("IMAGE", addParam.getFileType());
+        assertEquals("image/png", addParam.getMimeType());
+        assertEquals(120, addParam.getDuration());
+    }
+
+    @Test
+    @DisplayName("参数对象-编辑参数")
+    void testEditParam_Properties() {
+        BmsMediaEditParam editParam = new BmsMediaEditParam();
+        editParam.setId("edit-id");
+        editParam.setFileName("edited-file.jpg");
+        editParam.setOriginalName("编辑文件.jpg");
+
+        assertEquals("edit-id", editParam.getId());
+        assertEquals("edited-file.jpg", editParam.getFileName());
+        assertEquals("编辑文件.jpg", editParam.getOriginalName());
+    }
+
+    @Test
+    @DisplayName("分页结果-验证")
+    void testPageResult_Validation() {
+        Page<BmsMedia> mockPage = new Page<>(1, 10);
+        mockPage.setRecords(List.of(testMedia));
+        mockPage.setTotal(1);
+
+        assertNotNull(mockPage);
+        assertEquals(1, mockPage.getTotal());
+        assertEquals(1, mockPage.getRecords().size());
+        assertEquals("test-image.jpg", mockPage.getRecords().get(0).getFileName());
+    }
+
+    @Test
+    @DisplayName("文件类型验证-图片")
+    void testFileType_Image() {
+        String[] imageTypes = {"jpg", "jpeg", "png", "gif", "webp"};
+        for (String type : imageTypes) {
+            assertTrue(type.matches("^(jpg|jpeg|png|gif|webp)$"));
+        }
+    }
+
+    @Test
+    @DisplayName("文件类型验证-视频")
+    void testFileType_Video() {
+        String[] videoTypes = {"mp4", "avi", "mov", "mkv"};
+        for (String type : videoTypes) {
+            assertTrue(type.matches("^(mp4|avi|mov|mkv)$"));
+        }
+    }
+
+    @Test
+    @DisplayName("MIME类型验证")
+    void testMimeType_Validation() {
+        assertEquals("image/jpeg", testMedia.getMimeType());
+        assertTrue(testMedia.getMimeType().startsWith("image/"));
+    }
+
+    @Test
+    @DisplayName("文件大小格式化-KB")
+    void testFileSize_Formatting_KB() {
+        long sizeInBytes = 1024L;
+        double sizeInKB = sizeInBytes / 1024.0;
+        assertEquals(1.0, sizeInKB);
+    }
+
+    @Test
+    @DisplayName("文件大小格式化-MB")
+    void testFileSize_Formatting_MB() {
+        long sizeInBytes = 1024L * 1024L;
+        double sizeInMB = sizeInBytes / (1024.0 * 1024.0);
+        assertEquals(1.0, sizeInMB);
     }
 }

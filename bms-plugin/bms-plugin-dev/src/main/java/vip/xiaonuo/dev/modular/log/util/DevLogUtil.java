@@ -55,7 +55,7 @@ public class DevLogUtil {
             devLog.setReqMethod(method);
             devLog.setReqUrl(requestURI);
             devLog.setParamJson(CommonJoinPointUtil.getArgsJsonString(joinPoint));
-            devLog.setResultJson(resultJson);
+            devLog.setResultJson(CommonDesensitizeUtil.desensitizeJson(resultJson));
             devLog.setOpTime(DateTime.now());
             devLog.setOpUser(userName);
             creatLogSignValue(devLog);

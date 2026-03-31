@@ -244,11 +244,23 @@
 	const handleCoverImageChange = ({ fileList }) => {
 		coverImageFileList.value = fileList
 		if (fileList.length > 0 && fileList[0].originFileObj) {
-			const reader = new FileReader()
-			reader.onload = (e) => {
-				formData.value.coverImage = e.target.result
-			}
-			reader.readAsDataURL(fileList[0].originFileObj)
+			// 使用媒体API上传文件而不是Base64
+			const uploadData = new FormData()
+			uploadData.append('file', fileList[0].originFileObj)
+			uploadData.append('name', fileList[0].name)
+			// 使用媒体上传接口
+			import('@/api/biz/bizMediaApi').then((module) => {
+				const bizMediaApi = module.default
+				bizMediaApi.mediaUpload(uploadData).then((res) => {
+					if (res && res.url) {
+						formData.value.coverImage = res.url
+						message.success('封面上传成功')
+					}
+				}).catch((error) => {
+					message.error('上传失败：' + (error.message || '未知错误'))
+					coverImageFileList.value = []
+				})
+			})
 		}
 	}
 
@@ -274,6 +286,9 @@
 					message.success(publishType.value === 'now' ? '发布成功' : publishType.value === 'scheduled' ? '已设置定时发布' : '保存成功')
 					onClose()
 					emit('successful')
+				})
+				.catch((error) => {
+					message.error('操作失败：' + (error.message || '未知错误'))
 				})
 				.finally(() => {
 					formLoading.value = false

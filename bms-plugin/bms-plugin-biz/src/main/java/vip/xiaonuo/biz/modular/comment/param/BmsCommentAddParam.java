@@ -17,10 +17,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.Setter;
+import vip.xiaonuo.common.util.CommonXssUtil;
 
 @Getter
-@Setter
 public class BmsCommentAddParam {
 
     @Schema(description = "文章ID", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -61,4 +60,46 @@ public class BmsCommentAddParam {
 
     @Schema(description = "用户代理")
     private String userAgent;
+
+    // XSS过滤的setter方法
+    public void setNickname(String nickname) {
+        this.nickname = CommonXssUtil.filterNickname(nickname);
+    }
+
+    public void setEmail(String email) {
+        this.email = CommonXssUtil.filterEmail(email);
+    }
+
+    public void setWebsite(String website) {
+        this.website = CommonXssUtil.filterWebsite(website);
+    }
+
+    public void setContent(String content) {
+        this.content = CommonXssUtil.filterPlainText(content);
+    }
+
+    public void setReplyUserName(String replyUserName) {
+        this.replyUserName = CommonXssUtil.filterNickname(replyUserName);
+    }
+
+    // 其他字段的普通setter
+    public void setArticleId(String articleId) {
+        this.articleId = articleId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    public void setReplyUserId(String replyUserId) {
+        this.replyUserId = replyUserId;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
 }

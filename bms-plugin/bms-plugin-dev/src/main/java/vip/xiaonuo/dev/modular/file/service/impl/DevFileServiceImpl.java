@@ -58,6 +58,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 文件Service接口实现类
@@ -71,6 +72,160 @@ public class DevFileServiceImpl extends ServiceImpl<DevFileMapper, DevFile> impl
 
     @Resource
     private CommonProperties commonProperties;
+
+    // ==================== 文件上传安全配置 ====================
+
+    /**
+     * 最大文件大小限制：10MB
+     */
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024L;
+
+    /**
+     * 允许的文件后缀白名单
+     */
+    private static final List<String> ALLOWED_EXTENSIONS = List.of(
+            // 图片类型
+            "jpg", "jpeg", "png", "gif", "bmp", "webp",
+            // 文档类型
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+            // 文本类型
+            "txt", "md", "json", "xml", "csv",
+            // 音频类型
+            "mp3", "wav", "ogg",
+            // 视频类型
+            "mp4", "avi", "mov", "wmv"
+    );
+
+    /**
+     * 允许的 MIME 类型白名单
+     */
+    private static final List<String> ALLOWED_MIME_TYPES = List.of(
+            // 图片类型
+            "image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp",
+            // 文档类型
+            "application/pdf",
+            "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            // 文本类型
+            "text/plain", "text/markdown", "text/csv", "application/json", "application/xml",
+            // 音频类型
+            "audio/mpeg", "audio/wav", "audio/ogg",
+            // 视频类型
+            "video/mp4", "video/avi", "video/quicktime", "video/x-ms-wmv"
+    );
+
+    /**
+     * 文件头 Magic Number 映射（用于检测真实文件类型）
+     */
+    private static final Map<String, String> MAGIC_NUMBERS = Map.ofEntries(
+            Map.entry("FFD8FF", "jpg"),           // JPEG
+            Map.entry("89504E47", "png"),         // PNG
+            Map.entry("47494638", "gif"),         // GIF
+            Map.entry("424D", "bmp"),             // BMP
+            Map.entry("25504446", "pdf"),         // PDF (%PDF)
+            Map.entry("D0CF11E0", "doc"),         // MS Office (DOC, XLS, PPT)
+            Map.entry("504B0304", "zip"),         // ZIP-based (DOCX, XLSX, PPTX, etc.)
+            Map.entry("494433", "mp3"),           // MP3 (ID3)
+            Map.entry("52494646", "wav"),         // WAV (RIFF)
+            Map.entry("0000002066747970", "mp4"), // MP4 (ftyp)
+            Map.entry("000001B", "mpg"),          // MPEG
+            Map.entry("41564920", "avi")          // AVI (AVI )
+    );
+
+    /**
+     * 校验文件安全性（大小、类型、Magic Number）
+     */
+    private void validateFileSecurity(MultipartFile file) {
+        // 1. 校验文件是否为空
+        if (file == null || file.isEmpty()) {
+            throw new CommonException("上传文件不能为空");
+        }
+
+        // 2. 校验文件大小
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new CommonException("文件大小超出限制，最大允许 {}MB", MAX_FILE_SIZE / 1024 / 1024);
+        }
+
+        // 3. 校验文件后缀（白名单）
+        String originalFilename = file.getOriginalFilename();
+        String fileSuffix = FileUtil.getSuffix(originalFilename);
+        if (StrUtil.isBlank(fileSuffix)) {
+            throw new CommonException("文件缺少后缀名");
+        }
+        fileSuffix = fileSuffix.toLowerCase();
+        if (!ALLOWED_EXTENSIONS.contains(fileSuffix)) {
+            throw new CommonException("不允许上传该文件类型：{}，仅允许：{}", fileSuffix, ALLOWED_EXTENSIONS);
+        }
+
+        // 4. 校验 MIME 类型（白名单）
+        String contentType = file.getContentType();
+        if (StrUtil.isBlank(contentType) || !ALLOWED_MIME_TYPES.contains(contentType)) {
+            throw new CommonException("不允许的 MIME 类型：{}，仅允许：{}", contentType, ALLOWED_MIME_TYPES);
+        }
+
+        // 5. 校验文件头 Magic Number（防止伪装攻击）
+        try {
+            byte[] fileHeader = readFileHeader(file, 8);
+            String detectedType = detectFileTypeByMagicNumber(fileHeader);
+            if (detectedType != null && !isCompatibleType(detectedType, fileSuffix)) {
+                throw new CommonException("文件内容与声明类型不匹配，可能存在伪装攻击");
+            }
+        } catch (IOException e) {
+            log.warn("无法读取文件头进行安全校验：{}", e.getMessage());
+        }
+    }
+
+    /**
+     * 读取文件头字节
+     */
+    private byte[] readFileHeader(MultipartFile file, int length) throws IOException {
+        return file.getBytes();
+    }
+
+    /**
+     * 通过 Magic Number 检测真实文件类型
+     */
+    private String detectFileTypeByMagicNumber(byte[] fileHeader) {
+        if (fileHeader == null || fileHeader.length < 2) {
+            return null;
+        }
+        StringBuilder hexBuilder = new StringBuilder();
+        for (int i = 0; i < Math.min(fileHeader.length, 8); i++) {
+            hexBuilder.append(String.format("%02X", fileHeader[i]));
+        }
+        String hexHeader = hexBuilder.toString();
+
+        for (Map.Entry<String, String> entry : MAGIC_NUMBERS.entrySet()) {
+            if (hexHeader.startsWith(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 判断检测类型与声明后缀是否兼容
+     */
+    private boolean isCompatibleType(String detectedType, String declaredSuffix) {
+        // ZIP 类文件包括 docx, xlsx, pptx 等
+        if ("zip".equals(detectedType)) {
+            return List.of("docx", "xlsx", "pptx", "zip").contains(declaredSuffix);
+        }
+        // MS Office 老格式包括 doc, xls, ppt
+        if ("doc".equals(detectedType)) {
+            return List.of("doc", "xls", "ppt").contains(declaredSuffix);
+        }
+        return detectedType.equals(declaredSuffix);
+    }
+
+    /**
+     * 生成安全文件名（UUID + 校验后缀）
+     */
+    private String generateSafeFileName(String originalSuffix) {
+        String uuid = cn.hutool.core.util.IdUtil.simpleUUID();
+        return uuid + StrUtil.DOT + originalSuffix.toLowerCase();
+    }
 
     @Override
     public String uploadReturnId(String engine, MultipartFile file) {
@@ -202,6 +357,9 @@ public class DevFileServiceImpl extends ServiceImpl<DevFileMapper, DevFile> impl
      **/
     private String storageFile(String engine, MultipartFile file, boolean returnFileId, Boolean isDownloadAuth) {
 
+        // 安全校验：文件大小、类型、Magic Number
+        validateFileSecurity(file);
+
         // 如果引擎为空，默认使用本地
         if(ObjectUtil.isEmpty(engine)) {
             engine = DevFileEngineTypeEnum.LOCAL.getValue();
@@ -213,7 +371,14 @@ public class DevFileServiceImpl extends ServiceImpl<DevFileMapper, DevFile> impl
         // 存储桶名称
         String bucketName;
 
-        String fileKey = genFileKey(fileId, file);
+        // 获取安全后缀名
+        String safeSuffix = FileUtil.getSuffix(file.getOriginalFilename()).toLowerCase();
+        
+        // 生成安全的文件名（不暴露原始文件名）
+        String safeFileName = generateSafeFileName(safeSuffix);
+
+        // 生成文件key（使用安全文件名）
+        String fileKey = genFileKeyWithSafeName(fileId, safeFileName);
 
         // 定义存储的url，本地文件返回文件实际路径，其他引擎返回网络地址
         String storageUrl;
@@ -253,20 +418,19 @@ public class DevFileServiceImpl extends ServiceImpl<DevFileMapper, DevFile> impl
         devFile.setEngine(engine);
         devFile.setBucket(bucketName);
         devFile.setFileKey(fileKey);
-        devFile.setName(file.getOriginalFilename());
-        String suffix = ObjectUtil.isNotEmpty(file.getOriginalFilename())?StrUtil.subAfter(file.getOriginalFilename(),
-                StrUtil.DOT, true):null;
-        devFile.setSuffix(suffix);
+        // 使用安全文件名（不暴露原始文件名）
+        devFile.setName(safeFileName);
+        devFile.setSuffix(safeSuffix);
         devFile.setSizeKb(Convert.toStr(NumberUtil.div(new BigDecimal(file.getSize()), BigDecimal.valueOf(1024))
                 .setScale(0,  RoundingMode.HALF_UP )));
         devFile.setSizeInfo(FileUtil.readableFileSize(file.getSize()));
-        devFile.setObjName(ObjectUtil.isNotEmpty(devFile.getSuffix())?fileId + StrUtil.DOT + devFile.getSuffix():null);
+        devFile.setObjName(safeFileName);
         // 如果是图片，则压缩生成缩略图
-        if(ObjectUtil.isNotEmpty(suffix)) {
-            if(isPic(suffix)) {
+        if(ObjectUtil.isNotEmpty(safeSuffix)) {
+            if(isPic(safeSuffix)) {
                 try {
                     devFile.setThumbnail(ImgUtil.toBase64DataUri(ImgUtil.scale(ImgUtil.toImage(file.getBytes()),
-                            100, 100, null), suffix));
+                            100, 100, null), safeSuffix));
                 } catch (Exception ignored) {
                 }
             }
@@ -338,6 +502,18 @@ public class DevFileServiceImpl extends ServiceImpl<DevFileMapper, DevFile> impl
 
         // 返回
         return dateFolderPath + fileObjectName;
+    }
+
+    /**
+     * 使用安全文件名生成文件key，格式如 2021/10/11/uuid-safe-name.docx
+     */
+    public String genFileKeyWithSafeName(String fileId, String safeFileName) {
+        // 获取日期文件夹，格式如，2021/10/11/
+        String dateFolderPath = DateUtil.thisYear() + StrUtil.SLASH +
+                (DateUtil.thisMonth() + 1) + StrUtil.SLASH +
+                DateUtil.thisDayOfMonth() + StrUtil.SLASH;
+        // 返回（使用安全文件名）
+        return dateFolderPath + safeFileName;
     }
 
     @Override

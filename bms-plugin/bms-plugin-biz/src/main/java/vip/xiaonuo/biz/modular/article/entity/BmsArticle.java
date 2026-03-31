@@ -12,6 +12,7 @@
  */
 package vip.xiaonuo.biz.modular.article.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,6 +21,7 @@ import lombok.Setter;
 import vip.xiaonuo.common.pojo.CommonEntity;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 文章实体
@@ -60,6 +62,14 @@ public class BmsArticle extends CommonEntity {
     /** 作者ID */
     @Schema(description = "作者ID")
     private String authorId;
+
+    /** 作者名称 */
+    @Schema(description = "作者名称")
+    private String author;
+
+    /** 来源 */
+    @Schema(description = "来源")
+    private String source;
 
     /** 状态 (DRAFT-草稿, PUBLISHED-已发布) */
     @Schema(description = "状态 (DRAFT-草稿, PUBLISHED-已发布)")
@@ -112,4 +122,14 @@ public class BmsArticle extends CommonEntity {
     /** 扩展信息 */
     @Schema(description = "扩展信息")
     private String extJson;
+
+    /** 标签ID列表（非数据库字段） */
+    @Schema(description = "标签ID列表")
+    @TableField(exist = false)
+    private List<String> tagIdList;
+
+    /** 标签名称列表（非数据库字段，用于前端显示） */
+    @Schema(description = "标签名称列表")
+    @TableField(exist = false)
+    private String tags;
 }

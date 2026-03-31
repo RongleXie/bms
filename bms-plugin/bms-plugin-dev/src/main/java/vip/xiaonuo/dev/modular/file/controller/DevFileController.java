@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import vip.xiaonuo.common.annotation.CommonLog;
 import vip.xiaonuo.common.pojo.CommonResult;
 import vip.xiaonuo.dev.api.DevConfigApi;
@@ -69,6 +70,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 1)
     @Operation(summary = "动态上传文件返回id")
     @CommonLog("动态上传文件返回id")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadDynamicReturnId")
     public CommonResult<String> uploadDynamicReturnId(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnId(devConfigApi.getValueByKey(SNOWY_SYS_DEFAULT_FILE_ENGINE_KEY), file));
@@ -83,6 +85,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 2)
     @Operation(summary = "动态上传文件返回url")
     @CommonLog("动态上传文件返回url")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadDynamicReturnUrl")
     public CommonResult<String> uploadDynamicReturnUrl(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnUrl(devConfigApi.getValueByKey(SNOWY_SYS_DEFAULT_FILE_ENGINE_KEY), file));
@@ -97,6 +100,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 3)
     @Operation(summary = "上传本地文件返回id")
     @CommonLog("上传本地文件返回id")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadLocalReturnId")
     public CommonResult<String> uploadLocalReturnId(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnId(DevFileEngineTypeEnum.LOCAL.getValue(), file));
@@ -111,6 +115,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 4)
     @Operation(summary = "上传本地文件返回url")
     @CommonLog("上传本地文件返回url")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadLocalReturnUrl")
     public CommonResult<String> uploadLocalReturnUrl(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnUrl(DevFileEngineTypeEnum.LOCAL.getValue(), file));
@@ -125,6 +130,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 5)
     @Operation(summary = "上传阿里云文件返回id")
     @CommonLog("上传阿里云文件返回id")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadAliyunReturnId")
     public CommonResult<String> uploadAliyunReturnId(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnId(DevFileEngineTypeEnum.ALIYUN.getValue(), file));
@@ -139,6 +145,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 6)
     @Operation(summary = "上传阿里云文件返回url")
     @CommonLog("上传阿里云文件返回url")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadAliyunReturnUrl")
     public CommonResult<String> uploadAliyunReturnUrl(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnUrl(DevFileEngineTypeEnum.ALIYUN.getValue(), file));
@@ -153,6 +160,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 7)
     @Operation(summary = "上传腾讯云文件返回id")
     @CommonLog("上传腾讯云文件返回id")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadTencentReturnId")
     public CommonResult<String> uploadTencentReturnId(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnId(DevFileEngineTypeEnum.TENCENT.getValue(), file));
@@ -167,6 +175,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 8)
     @Operation(summary = "上传腾讯云文件返回url")
     @CommonLog("上传腾讯云文件返回url")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadTencentReturnUrl")
     public CommonResult<String> uploadTencentReturnUrl(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnUrl(DevFileEngineTypeEnum.TENCENT.getValue(), file));
@@ -181,6 +190,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 9)
     @Operation(summary = "上传MINIO文件返回id")
     @CommonLog("上传MINIO文件返回id")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadMinioReturnId")
     public CommonResult<String> uploadMinioReturnId(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnId(DevFileEngineTypeEnum.MINIO.getValue(), file));
@@ -195,6 +205,7 @@ public class DevFileController {
     @ApiOperationSupport(order = 10)
     @Operation(summary = "上传MINIO文件返回url")
     @CommonLog("上传MINIO文件返回url")
+    @SaCheckPermission("/dev/file/upload")
     @PostMapping("/dev/file/uploadMinioReturnUrl")
     public CommonResult<String> uploadMinioReturnUrl(@RequestPart("file") MultipartFile file) {
         return CommonResult.data(devFileService.uploadReturnUrl(DevFileEngineTypeEnum.MINIO.getValue(), file));

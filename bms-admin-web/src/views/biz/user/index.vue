@@ -378,7 +378,7 @@
 		alert: {
 			show: false,
 			clear: () => {
-				selectedRowKeys.value = ref([])
+				selectedRowKeys.value = []
 			}
 		},
 		rowSelection: {
@@ -405,6 +405,9 @@
 				.then(() => {
 					tableRef.value.refresh()
 				})
+				.catch((error) => {
+					message.error('操作失败：' + (error.message || '未知错误'))
+				})
 				.finally(() => {
 					loading.value = false
 				})
@@ -413,6 +416,9 @@
 				.userEnableUser(record)
 				.then(() => {
 					tableRef.value.refresh()
+				})
+				.catch((error) => {
+					message.error('操作失败：' + (error.message || '未知错误'))
 				})
 				.finally(() => {
 					loading.value = false
@@ -427,7 +433,10 @@
 			}
 		]
 		bizUserApi.userDelete(params).then(() => {
+			message.success('删除成功')
 			tableRef.value.refresh()
+		}).catch((error) => {
+			message.error('删除失败：' + (error.message || '未知错误'))
 		})
 	}
 	// 批量导出校验并加参数
@@ -464,7 +473,10 @@
 	// 批量删除
 	const deleteBatchUser = (params) => {
 		bizUserApi.userDelete(params).then(() => {
+			message.success('批量删除成功')
 			tableRef.value.clearRefreshSelected()
+		}).catch((error) => {
+			message.error('批量删除失败：' + (error.message || '未知错误'))
 		})
 	}
 	// 打开角色选择器

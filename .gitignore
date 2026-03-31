@@ -31,4 +31,16 @@ logs/
 *.log
 tmp/
 !DmJdbcDriver18.jar
-!kingbase8-8.6.0.jarnul
+!kingbase8-8.6.0.jar
+
+# Local environment config (contains passwords)
+application-local.properties
+
+# Redis dump
+dump.rdb
+
+# Temp files
+nul
+
+# Startup logs
+bms-startup*.log

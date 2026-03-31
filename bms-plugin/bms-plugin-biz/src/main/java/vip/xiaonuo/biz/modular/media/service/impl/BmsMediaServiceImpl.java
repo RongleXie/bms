@@ -16,6 +16,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollStreamUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -32,6 +33,7 @@ import vip.xiaonuo.biz.modular.media.service.BmsMediaService;
 import vip.xiaonuo.common.enums.CommonSortOrderEnum;
 import vip.xiaonuo.common.exception.CommonException;
 import vip.xiaonuo.common.page.CommonPageRequest;
+import vip.xiaonuo.common.util.CommonSqlUtil;
 
 import java.util.List;
 
@@ -44,9 +46,17 @@ import java.util.List;
 @Service
 public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> implements BmsMediaService {
 
+    private void checkMediaOwner(BmsMedia media) {
+        String currentUserId = StpUtil.getLoginIdAsString();
+        if (!currentUserId.equals(media.getUploadUser())) {
+            throw new CommonException("无权限操作该媒体文件，上传者为：{}", media.getUploadUser());
+        }
+    }
+
     @Override
     public Page<BmsMedia> page(BmsMediaPageParam bmsMediaPageParam) {
         QueryWrapper<BmsMedia> queryWrapper = new QueryWrapper<BmsMedia>().checkSqlInjection();
+        queryWrapper.select("ID", "FILE_NAME", "ORIGINAL_NAME", "FILE_URL", "FILE_SIZE", "FILE_TYPE", "MIME_TYPE", "THUMBNAIL_URL", "STATUS", "CREATE_TIME", "UPDATE_TIME");
         if(ObjectUtil.isNotEmpty(bmsMediaPageParam.getSearchKey())) {
             queryWrapper.lambda().and(q -> q
                 .like(BmsMedia::getFileName, bmsMediaPageParam.getSearchKey())
@@ -67,6 +77,7 @@ public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> i
         }
         if(ObjectUtil.isAllNotEmpty(bmsMediaPageParam.getSortField(), bmsMediaPageParam.getSortOrder())) {
             CommonSortOrderEnum.validate(bmsMediaPageParam.getSortOrder());
+            CommonSqlUtil.validateSortField(bmsMediaPageParam.getSortField());
             queryWrapper.orderBy(true, bmsMediaPageParam.getSortOrder().equals(CommonSortOrderEnum.ASC.getValue()),
                     StrUtil.toUnderlineCase(bmsMediaPageParam.getSortField()));
         } else {
@@ -78,12 +89,13 @@ public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> i
     @Override
     public List<BmsMedia> list(BmsMediaPageParam bmsMediaPageParam) {
         QueryWrapper<BmsMedia> queryWrapper = new QueryWrapper<BmsMedia>().checkSqlInjection();
+        queryWrapper.select("ID", "FILE_NAME", "ORIGINAL_NAME", "FILE_URL", "FILE_SIZE", "FILE_TYPE", "THUMBNAIL_URL", "STATUS", "CREATE_TIME");
         if(ObjectUtil.isNotEmpty(bmsMediaPageParam.getFileType())) {
             queryWrapper.lambda().eq(BmsMedia::getFileType, bmsMediaPageParam.getFileType());
         }
-        // 只查询启用状态的数据
         queryWrapper.lambda().eq(BmsMedia::getStatus, BmsMediaStatusEnum.ENABLE.getValue());
         queryWrapper.lambda().orderByDesc(BmsMedia::getCreateTime);
+        queryWrapper.last("LIMIT 1000");
         return this.list(queryWrapper);
     }
 
@@ -99,6 +111,7 @@ public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> i
             }
         }
         BmsMedia bmsMedia = BeanUtil.toBean(bmsMediaAddParam, BmsMedia.class);
+        bmsMedia.setUploadUser(StpUtil.getLoginIdAsString());
         // 默认状态为启用
         if(ObjectUtil.isEmpty(bmsMedia.getStatus())) {
             bmsMedia.setStatus(BmsMediaStatusEnum.ENABLE.getValue());
@@ -114,6 +127,7 @@ public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> i
     @Override
     public void edit(BmsMediaEditParam bmsMediaEditParam) {
         BmsMedia bmsMedia = this.queryEntity(bmsMediaEditParam.getId());
+        checkMediaOwner(bmsMedia);
         // 校验文件名唯一性（排除自身）
         if(ObjectUtil.isNotEmpty(bmsMediaEditParam.getFileName())) {
             long count = this.count(new QueryWrapper<BmsMedia>().lambda()
@@ -130,8 +144,12 @@ public class BmsMediaServiceImpl extends ServiceImpl<BmsMediaMapper, BmsMedia> i
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void delete(List<BmsMediaIdParam> bmsMediaIdParamList) {
-        // 执行删除
-        this.removeByIds(CollStreamUtil.toList(bmsMediaIdParamList, BmsMediaIdParam::getId));
+        List<String> idList = CollStreamUtil.toList(bmsMediaIdParamList, BmsMediaIdParam::getId);
+        for (String id : idList) {
+            BmsMedia media = this.queryEntity(id);
+            checkMediaOwner(media);
+        }
+        this.removeByIds(idList);
     }
 
     @Override

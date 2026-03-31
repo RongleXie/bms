@@ -16,10 +16,12 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollStreamUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vip.xiaonuo.biz.modular.category.entity.BmsCategory;
@@ -30,9 +32,12 @@ import vip.xiaonuo.biz.modular.category.param.BmsCategoryEditParam;
 import vip.xiaonuo.biz.modular.category.param.BmsCategoryIdParam;
 import vip.xiaonuo.biz.modular.category.param.BmsCategoryPageParam;
 import vip.xiaonuo.biz.modular.category.service.BmsCategoryService;
+import vip.xiaonuo.common.cache.CommonCacheOperator;
+import vip.xiaonuo.common.consts.CacheConstant;
 import vip.xiaonuo.common.enums.CommonSortOrderEnum;
 import vip.xiaonuo.common.exception.CommonException;
 import vip.xiaonuo.common.page.CommonPageRequest;
+import vip.xiaonuo.common.util.CommonSqlUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,9 +47,13 @@ import java.util.stream.Collectors;
 @Service
 public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCategory> implements BmsCategoryService {
 
+    @Resource
+    private CommonCacheOperator commonCacheOperator;
+
     @Override
     public Page<BmsCategory> page(BmsCategoryPageParam bmsCategoryPageParam) {
         QueryWrapper<BmsCategory> queryWrapper = new QueryWrapper<BmsCategory>().checkSqlInjection();
+        queryWrapper.select("ID", "PARENT_ID", "NAME", "CODE", "DESCRIPTION", "ICON", "STATUS", "SORT_CODE", "CREATE_TIME", "UPDATE_TIME");
         if(ObjectUtil.isNotEmpty(bmsCategoryPageParam.getSearchKey())) {
             queryWrapper.lambda().and(q -> q
                 .like(BmsCategory::getName, bmsCategoryPageParam.getSearchKey())
@@ -65,6 +74,7 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
         }
         if(ObjectUtil.isAllNotEmpty(bmsCategoryPageParam.getSortField(), bmsCategoryPageParam.getSortOrder())) {
             CommonSortOrderEnum.validate(bmsCategoryPageParam.getSortOrder());
+            CommonSqlUtil.validateSortField(bmsCategoryPageParam.getSortField());
             queryWrapper.orderBy(true, bmsCategoryPageParam.getSortOrder().equals(CommonSortOrderEnum.ASC.getValue()),
                     StrUtil.toUnderlineCase(bmsCategoryPageParam.getSortField()));
         } else {
@@ -75,20 +85,49 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
 
     @Override
     public List<BmsCategory> list(BmsCategoryPageParam bmsCategoryPageParam) {
+        String cacheKey = CacheConstant.BMS_CATEGORY_LIST_CACHE_KEY;
+        Object cached = commonCacheOperator.get(cacheKey);
+        if (ObjectUtil.isNotEmpty(cached)) {
+            return JSON.parseArray(cached.toString(), BmsCategory.class);
+        }
         QueryWrapper<BmsCategory> queryWrapper = new QueryWrapper<BmsCategory>().checkSqlInjection();
+        queryWrapper.select("ID", "PARENT_ID", "NAME", "CODE", "STATUS", "SORT_CODE");
         if(ObjectUtil.isNotEmpty(bmsCategoryPageParam.getStatus())) {
             queryWrapper.lambda().eq(BmsCategory::getStatus, bmsCategoryPageParam.getStatus());
         } else {
             queryWrapper.lambda().eq(BmsCategory::getStatus, BmsCategoryStatusEnum.ENABLE.getValue());
         }
         queryWrapper.lambda().orderByAsc(BmsCategory::getSortCode);
-        return this.list(queryWrapper);
+        queryWrapper.last("LIMIT 1000");
+        List<BmsCategory> result = this.list(queryWrapper);
+        commonCacheOperator.put(cacheKey, JSON.toJSONString(result), CacheConstant.CACHE_EXPIRE_30_MINUTES);
+        return result;
     }
 
     @Override
     public List<BmsCategory> tree(BmsCategoryPageParam bmsCategoryPageParam) {
-        List<BmsCategory> allList = this.list(bmsCategoryPageParam);
-        return buildTree(allList, "0");
+        String cacheKey = CacheConstant.BMS_CATEGORY_TREE_CACHE_KEY;
+        Object cached = commonCacheOperator.get(cacheKey);
+        if (ObjectUtil.isNotEmpty(cached)) {
+            return JSON.parseArray(cached.toString(), BmsCategory.class);
+        }
+        List<BmsCategory> allList = this.listFromDb(bmsCategoryPageParam);
+        List<BmsCategory> treeList = buildTree(allList, "0");
+        commonCacheOperator.put(cacheKey, JSON.toJSONString(treeList), CacheConstant.CACHE_EXPIRE_30_MINUTES);
+        return treeList;
+    }
+
+    private List<BmsCategory> listFromDb(BmsCategoryPageParam bmsCategoryPageParam) {
+        QueryWrapper<BmsCategory> queryWrapper = new QueryWrapper<BmsCategory>().checkSqlInjection();
+        queryWrapper.select("ID", "PARENT_ID", "NAME", "CODE", "STATUS", "SORT_CODE");
+        if(ObjectUtil.isNotEmpty(bmsCategoryPageParam.getStatus())) {
+            queryWrapper.lambda().eq(BmsCategory::getStatus, bmsCategoryPageParam.getStatus());
+        } else {
+            queryWrapper.lambda().eq(BmsCategory::getStatus, BmsCategoryStatusEnum.ENABLE.getValue());
+        }
+        queryWrapper.lambda().orderByAsc(BmsCategory::getSortCode);
+        queryWrapper.last("LIMIT 1000");
+        return this.list(queryWrapper);
     }
 
     private List<BmsCategory> buildTree(List<BmsCategory> allList, String parentId) {
@@ -106,7 +145,6 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void add(BmsCategoryAddParam bmsCategoryAddParam) {
-        // 校验分类名称唯一性（同父级下）
         long count = this.count(new QueryWrapper<BmsCategory>().lambda()
             .eq(BmsCategory::getName, bmsCategoryAddParam.getName())
             .eq(BmsCategory::getParentId, ObjectUtil.isEmpty(bmsCategoryAddParam.getParentId()) ? "0" : bmsCategoryAddParam.getParentId()));
@@ -120,6 +158,7 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
         }
         bmsCategory.setStatus(BmsCategoryStatusEnum.ENABLE.getValue());
         this.save(bmsCategory);
+        clearCategoryCache();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -127,7 +166,6 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
     public void edit(BmsCategoryEditParam bmsCategoryEditParam) {
         BmsCategory bmsCategory = this.queryEntity(bmsCategoryEditParam.getId());
 
-        // 校验分类名称唯一性（同父级下，排除自身）
         String parentId = ObjectUtil.isEmpty(bmsCategoryEditParam.getParentId()) ? "0" : bmsCategoryEditParam.getParentId();
         long count = this.count(new QueryWrapper<BmsCategory>().lambda()
             .eq(BmsCategory::getName, bmsCategoryEditParam.getName())
@@ -139,6 +177,7 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
 
         BeanUtil.copyProperties(bmsCategoryEditParam, bmsCategory);
         this.updateById(bmsCategory);
+        clearCategoryCache();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -146,12 +185,13 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
     public void delete(List<BmsCategoryIdParam> bmsCategoryIdParamList) {
         List<String> idList = CollStreamUtil.toList(bmsCategoryIdParamList, BmsCategoryIdParam::getId);
         if(ObjectUtil.isNotEmpty(idList)) {
-            for (String id : idList) {
-                if(this.count(new QueryWrapper<BmsCategory>().lambda().eq(BmsCategory::getParentId, id)) > 0) {
-                    throw new CommonException("该分类下存在子分类，无法删除");
-                }
+            long childCount = this.count(new QueryWrapper<BmsCategory>().lambda()
+                .in(BmsCategory::getParentId, idList));
+            if(childCount > 0) {
+                throw new CommonException("存在子分类的分类无法删除，请先删除子分类");
             }
             this.removeByIds(idList);
+            clearCategoryCache();
         }
     }
 
@@ -174,6 +214,7 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
     public void disableStatus(BmsCategoryIdParam bmsCategoryIdParam) {
         this.update(new LambdaUpdateWrapper<BmsCategory>().eq(BmsCategory::getId,
                 bmsCategoryIdParam.getId()).set(BmsCategory::getStatus, BmsCategoryStatusEnum.DISABLED.getValue()));
+        clearCategoryCache();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -181,5 +222,10 @@ public class BmsCategoryServiceImpl extends ServiceImpl<BmsCategoryMapper, BmsCa
     public void enableStatus(BmsCategoryIdParam bmsCategoryIdParam) {
         this.update(new LambdaUpdateWrapper<BmsCategory>().eq(BmsCategory::getId,
                 bmsCategoryIdParam.getId()).set(BmsCategory::getStatus, BmsCategoryStatusEnum.ENABLE.getValue()));
+        clearCategoryCache();
+    }
+
+    private void clearCategoryCache() {
+        commonCacheOperator.remove(CacheConstant.BMS_CATEGORY_LIST_CACHE_KEY, CacheConstant.BMS_CATEGORY_TREE_CACHE_KEY);
     }
 }

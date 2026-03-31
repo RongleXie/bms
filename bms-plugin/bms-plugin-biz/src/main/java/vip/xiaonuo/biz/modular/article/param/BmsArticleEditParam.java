@@ -18,7 +18,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.Setter;
+import vip.xiaonuo.common.util.CommonXssUtil;
 
 /**
  * 文章编辑参数
@@ -27,7 +27,6 @@ import lombok.Setter;
  * @date 2026/03/24
  **/
 @Getter
-@Setter
 public class BmsArticleEditParam {
 
     @Schema(description = "主键ID", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -102,4 +101,82 @@ public class BmsArticleEditParam {
 
     @Schema(description = "扩展信息")
     private String extJson;
+
+    // XSS过滤的setter方法
+    public void setTitle(String title) {
+        this.title = CommonXssUtil.filterPlainText(title);
+    }
+
+    public void setSummary(String summary) {
+        this.summary = CommonXssUtil.filterPlainText(summary);
+    }
+
+    public void setContent(String content) {
+        this.content = CommonXssUtil.filterMarkdown(content);
+    }
+
+    public void setCoverImage(String coverImage) {
+        this.coverImage = CommonXssUtil.filterUrl(coverImage);
+    }
+
+    public void setSeoKeywords(String seoKeywords) {
+        this.seoKeywords = CommonXssUtil.filterPlainText(seoKeywords);
+    }
+
+    public void setSeoDescription(String seoDescription) {
+        this.seoDescription = CommonXssUtil.filterPlainText(seoDescription);
+    }
+
+    public void setAuthor(String author) {
+        this.author = CommonXssUtil.filterPlainText(author);
+    }
+
+    public void setSource(String source) {
+        this.source = CommonXssUtil.filterPlainText(source);
+    }
+
+    // 其他字段的普通setter
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public void setAuthorId(String authorId) {
+        this.authorId = authorId;
+    }
+
+    public void setIsTop(Integer isTop) {
+        this.isTop = isTop;
+    }
+
+    public void setIsRecommend(Integer isRecommend) {
+        this.isRecommend = isRecommend;
+    }
+
+    public void setAllowComment(Integer allowComment) {
+        this.allowComment = allowComment;
+    }
+
+    public void setSortCode(Integer sortCode) {
+        this.sortCode = sortCode;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setScheduledPublishTime(String scheduledPublishTime) {
+        this.scheduledPublishTime = scheduledPublishTime;
+    }
+
+    public void setTagIds(String tagIds) {
+        this.tagIds = tagIds;
+    }
+
+    public void setExtJson(String extJson) {
+        this.extJson = extJson;
+    }
 }

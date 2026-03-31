@@ -14,15 +14,20 @@ package vip.xiaonuo.common.util;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.ReUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import vip.xiaonuo.common.exception.CommonException;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
- * SQL工具类，处理数据库兼容性问题
+ * SQL工具类，处理数据库兼容性问题及SQL注入防护
  *
  * @author yubaoshan
  * @date 2026/2/12 18:43
@@ -31,6 +36,15 @@ public class CommonSqlUtil {
 
     /** Oracle IN子句最大元素数量限制 */
     private static final int IN_CLAUSE_LIMIT = 999;
+
+    /** 用户ID白名单正则：只允许字母、数字、下划线、横线（雪花ID格式） */
+    private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
+
+    /** API URL白名单正则：只允许字母、数字、下划线、横线、斜杠 */
+    private static final Pattern API_URL_PATTERN = Pattern.compile("^[a-zA-Z0-9_/-]+$");
+
+    /** 排序字段白名单正则：只允许字母、数字、下划线（防止注入） */
+    private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     /**
      * 安全的IN查询，自动处理Oracle IN子句1000限制
@@ -75,16 +89,88 @@ public class CommonSqlUtil {
      *
      * @param wrapper MyBatis-Plus LambdaQueryWrapper
      * @param column  查询列
-     * @param userId  当前登录用户ID
-     * @param apiUrl  当前请求的API地址
+     * @param userId  当前登录用户ID（必须符合白名单格式）
+     * @param apiUrl  当前请求的API地址（必须符合白名单格式）
      * @param <T>     实体类型
+     * @throws CommonException 如果参数不符合白名单格式，抛出异常
      */
     public static <T> void scopeIn(LambdaQueryWrapper<T> wrapper, SFunction<T, ?> column, String userId, String apiUrl) {
-        // 防御性处理：移除单引号防止SQL注入
-        String safeUserId = userId.replace("'", "");
-        String safeApiUrl = apiUrl.replace("'", "");
-        wrapper.inSql(column, "SELECT ORG_ID FROM SYS_USER_DATA_SCOPE WHERE USER_ID = '" + safeUserId
+        // 使用正则白名单验证，防止SQL注入
+        validateUserId(userId);
+        validateApiUrl(apiUrl);
+        wrapper.inSql(column, "SELECT ORG_ID FROM SYS_USER_DATA_SCOPE WHERE USER_ID = '" + userId
                 + "' AND SCOPE_KEY = (SELECT SCOPE_KEY FROM SYS_USER_DATA_SCOPE_MAP WHERE USER_ID = '"
-                + safeUserId + "' AND API_URL = '" + safeApiUrl + "')");
+                + userId + "' AND API_URL = '" + apiUrl + "')");
+    }
+
+    /**
+     * 验证用户ID格式（正则白名单）
+     * 只允许字母、数字、下划线、横线，防止SQL注入
+     *
+     * @param userId 用户ID
+     * @throws CommonException 如果格式不合法
+     */
+    public static void validateUserId(String userId) {
+        if (StrUtil.isBlank(userId)) {
+            throw new CommonException("用户ID不能为空");
+        }
+        if (!ReUtil.isMatch(USER_ID_PATTERN, userId)) {
+            throw new CommonException("用户ID格式不合法，存在SQL注入风险：{}", userId);
+        }
+    }
+
+    /**
+     * 验证API URL格式（正则白名单）
+     * 只允许字母、数字、下划线、横线、斜杠，防止SQL注入
+     *
+     * @param apiUrl API URL
+     * @throws CommonException 如果格式不合法
+     */
+    public static void validateApiUrl(String apiUrl) {
+        if (StrUtil.isBlank(apiUrl)) {
+            throw new CommonException("API URL不能为空");
+        }
+        if (!ReUtil.isMatch(API_URL_PATTERN, apiUrl)) {
+            throw new CommonException("API URL格式不合法，存在SQL注入风险：{}", apiUrl);
+        }
+    }
+
+    /**
+     * 验证排序字段格式（正则白名单）
+     * 只允许字母、数字、下划线，防止SQL注入
+     * 
+     * @param sortField 排序字段（驼峰或下划线格式）
+     * @throws CommonException 如果格式不合法
+     */
+    public static void validateSortField(String sortField) {
+        if (StrUtil.isBlank(sortField)) {
+            return; // 空值不验证，由业务层决定默认排序
+        }
+        // 先转为下划线格式再验证
+        String underlineField = StrUtil.toUnderlineCase(sortField);
+        if (!ReUtil.isMatch(SORT_FIELD_PATTERN, underlineField)) {
+            throw new CommonException("排序字段格式不合法，存在SQL注入风险：{}", sortField);
+        }
+    }
+
+    /**
+     * 验证排序字段是否在白名单集合中
+     * 提供更严格的白名单校验，只允许预定义的字段排序
+     *
+     * @param sortField 排序字段
+     * @param allowedFields 允许的字段白名单（下划线格式）
+     * @throws CommonException 如果字段不在白名单中
+     */
+    public static void validateSortFieldInWhitelist(String sortField, Set<String> allowedFields) {
+        if (StrUtil.isBlank(sortField)) {
+            return; // 空值不验证
+        }
+        // 先验证格式
+        validateSortField(sortField);
+        // 转为下划线格式检查白名单
+        String underlineField = StrUtil.toUnderlineCase(sortField);
+        if (!allowedFields.contains(underlineField)) {
+            throw new CommonException("排序字段不在允许的白名单中：{}", sortField);
+        }
     }
 }

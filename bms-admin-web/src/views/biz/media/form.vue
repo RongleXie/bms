@@ -153,11 +153,19 @@
 	const handleFileChange = ({ fileList: newFileList }) => {
 		fileList.value = newFileList
 		if (newFileList.length > 0 && newFileList[0].originFileObj) {
-			const reader = new FileReader()
-			reader.onload = (e) => {
-				formData.value.url = e.target.result
-			}
-			reader.readAsDataURL(newFileList[0].originFileObj)
+			// 使用 API 上传文件而不是 Base64
+			const uploadData = new FormData()
+			uploadData.append('file', newFileList[0].originFileObj)
+			uploadData.append('name', newFileList[0].name)
+			bizMediaApi.mediaUpload(uploadData).then((res) => {
+				if (res && res.url) {
+					formData.value.url = res.url
+					message.success('上传成功')
+				}
+			}).catch((error) => {
+				message.error('上传失败：' + (error.message || '未知错误'))
+				fileList.value = []
+			})
 		}
 	}
 
@@ -167,8 +175,12 @@
 			bizMediaApi
 				.submitForm(formData.value, !!formData.value.id)
 				.then(() => {
+					message.success('保存成功')
 					onClose()
 					emit('successful')
+				})
+				.catch((error) => {
+					message.error('操作失败：' + (error.message || '未知错误'))
 				})
 				.finally(() => {
 					formLoading.value = false

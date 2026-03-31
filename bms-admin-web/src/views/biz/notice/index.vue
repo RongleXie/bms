@@ -190,7 +190,7 @@
 		alert: {
 			show: false,
 			clear: () => {
-				selectedRowKeys.value = ref([])
+				selectedRowKeys.value = []
 			}
 		},
 		rowSelection: {
@@ -224,13 +224,19 @@
 			}
 		]
 		bizNoticeApi.noticeDelete(params).then(() => {
+			message.success('删除成功')
 			tableRef.value.refresh(true)
+		}).catch((error) => {
+			message.error('删除失败：' + (error.message || '未知错误'))
 		})
 	}
 	// 批量删除
 	const deleteBatchBizNotice = (params) => {
 		bizNoticeApi.noticeDelete(params).then(() => {
+			message.success('批量删除成功')
 			tableRef.value.clearRefreshSelected()
+		}).catch((error) => {
+			message.error('批量删除失败：' + (error.message || '未知错误'))
 		})
 	}
 	// 修改状态
@@ -242,6 +248,9 @@
 				.then(() => {
 					tableRef.value.refresh()
 				})
+				.catch((error) => {
+					message.error('操作失败：' + (error.message || '未知错误'))
+				})
 				.finally(() => {
 					loading.value = false
 				})
@@ -250,6 +259,9 @@
 				.noticeEnableStatus(record)
 				.then(() => {
 					tableRef.value.refresh()
+				})
+				.catch((error) => {
+					message.error('操作失败：' + (error.message || '未知错误'))
 				})
 				.finally(() => {
 					loading.value = false

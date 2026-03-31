@@ -124,7 +124,7 @@
 		alert: {
 			show: false,
 			clear: () => {
-				selectedRowKeys.value = ref([])
+				selectedRowKeys.value = []
 			}
 		},
 		rowSelection: {
@@ -152,13 +152,19 @@
 			}
 		]
 		bizGroupApi.groupDelete(params).then(() => {
+			message.success('删除成功')
 			tableRef.value.refresh(true)
+		}).catch((error) => {
+			message.error('删除失败：' + (error.message || '未知错误'))
 		})
 	}
 	// 批量删除
 	const deleteBatchBizGroup = (params) => {
 		bizGroupApi.groupDelete(params).then(() => {
+			message.success('批量删除成功')
 			tableRef.value.clearRefreshSelected()
+		}).catch((error) => {
+			message.error('批量删除失败：' + (error.message || '未知错误'))
 		})
 	}
 	// 打开用户选择器

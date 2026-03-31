@@ -40,4 +40,51 @@ public class CacheConstant {
      */
     public static final String AUTH_C_PERMISSION_LIST_CACHE_KEY = "auth-c-permission-list:";
 
+    // ========== BMS业务缓存 ==========
+
+    /**
+     * 分类列表缓存Key
+     */
+    public static final String BMS_CATEGORY_LIST_CACHE_KEY = "bms-category-list";
+
+    /**
+     * 分类树缓存Key
+     */
+    public static final String BMS_CATEGORY_TREE_CACHE_KEY = "bms-category-tree";
+
+    /**
+     * 标签列表缓存Key
+     */
+    public static final String BMS_TAG_LIST_CACHE_KEY = "bms-tag-list";
+
+    /**
+     * 文章浏览量计数器缓存Key前缀
+     */
+    public static final String BMS_ARTICLE_VIEW_COUNT_PREFIX = "bms-article-view:";
+
+    /**
+     * 文章点赞计数器缓存Key前缀
+     */
+    public static final String BMS_ARTICLE_LIKE_COUNT_PREFIX = "bms-article-like:";
+
+    /**
+     * 文章评论计数器缓存Key前缀
+     */
+    public static final String BMS_ARTICLE_COMMENT_COUNT_PREFIX = "bms-article-comment:";
+
+    /**
+     * 缓存过期时间：30分钟（秒）
+     */
+    public static final long CACHE_EXPIRE_30_MINUTES = 30 * 60L;
+
+    /**
+     * 缓存过期时间：1小时（秒）
+     */
+    public static final long CACHE_EXPIRE_1_HOUR = 60 * 60L;
+
+    /**
+     * 计数器同步间隔：5分钟（秒）
+     */
+    public static final long COUNTER_SYNC_INTERVAL = 5 * 60L;
+
 }

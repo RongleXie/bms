@@ -14,6 +14,7 @@ package vip.xiaonuo.biz.modular.article.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollStreamUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -21,24 +22,35 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vip.xiaonuo.biz.modular.article.entity.BmsArticle;
+import vip.xiaonuo.biz.modular.article.entity.BmsArticleTag;
 import vip.xiaonuo.biz.modular.article.enums.BmsArticleStatusEnum;
 import vip.xiaonuo.biz.modular.article.mapper.BmsArticleMapper;
+import vip.xiaonuo.biz.modular.article.mapper.BmsArticleTagMapper;
 import vip.xiaonuo.biz.modular.article.param.BmsArticleAddParam;
 import vip.xiaonuo.biz.modular.article.param.BmsArticleEditParam;
 import vip.xiaonuo.biz.modular.article.param.BmsArticleIdParam;
 import vip.xiaonuo.biz.modular.article.param.BmsArticlePageParam;
 import vip.xiaonuo.biz.modular.article.service.BmsArticleService;
 import vip.xiaonuo.biz.modular.article.version.service.BmsArticleVersionService;
+import vip.xiaonuo.biz.modular.tag.entity.BmsTag;
+import vip.xiaonuo.biz.modular.tag.mapper.BmsTagMapper;
 import cn.dev33.satoken.stp.StpUtil;
+import vip.xiaonuo.common.consts.CacheConstant;
 import vip.xiaonuo.common.enums.CommonSortOrderEnum;
 import vip.xiaonuo.common.exception.CommonException;
 import vip.xiaonuo.common.page.CommonPageRequest;
+import vip.xiaonuo.common.util.CommonSqlUtil;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArticle> implements BmsArticleService {
@@ -46,9 +58,80 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Resource
     private BmsArticleVersionService articleVersionService;
 
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    private BmsArticleTagMapper articleTagMapper;
+
+    @Resource
+    private BmsTagMapper tagMapper;
+
+    private void saveArticleTags(String articleId, String tagIds) {
+        if (StrUtil.isBlank(tagIds)) {
+            return;
+        }
+        List<String> tagIdList = Arrays.asList(tagIds.split(","));
+        for (String tagId : tagIdList) {
+            if (StrUtil.isNotBlank(tagId.trim())) {
+                BmsArticleTag articleTag = new BmsArticleTag();
+                articleTag.setId(IdUtil.fastSimpleUUID());
+                articleTag.setArticleId(articleId);
+                articleTag.setTagId(tagId.trim());
+                articleTag.setCreateTime(new Date());
+                articleTagMapper.insert(articleTag);
+            }
+        }
+    }
+
+    private void deleteArticleTags(String articleId) {
+        articleTagMapper.delete(new QueryWrapper<BmsArticleTag>().lambda()
+            .eq(BmsArticleTag::getArticleId, articleId));
+    }
+
+    private List<String> getArticleTagIds(String articleId) {
+        List<BmsArticleTag> articleTags = articleTagMapper.selectList(
+            new QueryWrapper<BmsArticleTag>().lambda()
+                .eq(BmsArticleTag::getArticleId, articleId));
+        return articleTags.stream()
+            .map(BmsArticleTag::getTagId)
+            .collect(Collectors.toList());
+    }
+
+    private String getArticleTagNames(String articleId) {
+        List<String> tagIds = getArticleTagIds(articleId);
+        if (tagIds.isEmpty()) {
+            return "[]";
+        }
+        List<BmsTag> tags = tagMapper.selectBatchIds(tagIds);
+        List<String> names = tags.stream()
+            .map(BmsTag::getName)
+            .collect(Collectors.toList());
+        return cn.hutool.json.JSONUtil.toJsonStr(names);
+    }
+
+    private void checkArticleOwner(BmsArticle article) {
+        String currentUserId = StpUtil.getLoginIdAsString();
+        if (!currentUserId.equals(article.getAuthorId())) {
+            throw new CommonException("无权限操作该文章，文章作者为：{}", article.getAuthorId());
+        }
+    }
+
+    private void checkArticleViewPermission(BmsArticle article) {
+        if (BmsArticleStatusEnum.PUBLISHED.getValue().equals(article.getStatus())) {
+            return;
+        }
+        String currentUserId = StpUtil.getLoginIdAsString();
+        if (!currentUserId.equals(article.getAuthorId())) {
+            throw new CommonException("无权限查看该文章，文章状态为：{}", article.getStatus());
+        }
+    }
+
     @Override
     public Page<BmsArticle> page(BmsArticlePageParam bmsArticlePageParam) {
         QueryWrapper<BmsArticle> queryWrapper = new QueryWrapper<BmsArticle>().checkSqlInjection();
+        queryWrapper.select("ID", "TITLE", "SUMMARY", "COVER_IMAGE", "CATEGORY_ID", "AUTHOR_ID", "STATUS", 
+            "VIEW_COUNT", "LIKE_COUNT", "COMMENT_COUNT", "IS_TOP", "IS_RECOMMEND", "PUBLISH_TIME", "CREATE_TIME", "UPDATE_TIME");
         if(ObjectUtil.isNotEmpty(bmsArticlePageParam.getTitle())) {
             queryWrapper.lambda().like(BmsArticle::getTitle, bmsArticlePageParam.getTitle());
         }
@@ -69,6 +152,7 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
         }
         if(ObjectUtil.isAllNotEmpty(bmsArticlePageParam.getSortField(), bmsArticlePageParam.getSortOrder())) {
             CommonSortOrderEnum.validate(bmsArticlePageParam.getSortOrder());
+            CommonSqlUtil.validateSortField(bmsArticlePageParam.getSortField());
             queryWrapper.orderBy(true, bmsArticlePageParam.getSortOrder().equals(CommonSortOrderEnum.ASC.getValue()),
                     StrUtil.toUnderlineCase(bmsArticlePageParam.getSortField()));
         } else {
@@ -80,6 +164,8 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public List<BmsArticle> list(BmsArticlePageParam bmsArticlePageParam) {
         QueryWrapper<BmsArticle> queryWrapper = new QueryWrapper<BmsArticle>().checkSqlInjection();
+        queryWrapper.select("ID", "TITLE", "SUMMARY", "COVER_IMAGE", "CATEGORY_ID", "AUTHOR_ID", "STATUS", 
+            "VIEW_COUNT", "LIKE_COUNT", "COMMENT_COUNT", "IS_TOP", "IS_RECOMMEND", "PUBLISH_TIME", "CREATE_TIME");
         if(ObjectUtil.isNotEmpty(bmsArticlePageParam.getTitle())) {
             queryWrapper.lambda().like(BmsArticle::getTitle, bmsArticlePageParam.getTitle());
         }
@@ -90,13 +176,13 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
             queryWrapper.lambda().eq(BmsArticle::getStatus, bmsArticlePageParam.getStatus());
         }
         queryWrapper.lambda().orderByDesc(BmsArticle::getIsTop).orderByDesc(BmsArticle::getPublishTime).orderByDesc(BmsArticle::getCreateTime);
+        queryWrapper.last("LIMIT 1000");
         return this.list(queryWrapper);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void add(BmsArticleAddParam bmsArticleAddParam) {
-        // 校验文章标题唯一性
         long count = this.count(new QueryWrapper<BmsArticle>().lambda()
             .eq(BmsArticle::getTitle, bmsArticleAddParam.getTitle()));
         if(count > 0) {
@@ -109,14 +195,18 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
         bmsArticle.setLikeCount(0);
         bmsArticle.setCommentCount(0);
         this.save(bmsArticle);
+        // 保存文章标签关联
+        if (StrUtil.isNotBlank(bmsArticleAddParam.getTagIds())) {
+            saveArticleTags(bmsArticle.getId(), bmsArticleAddParam.getTagIds());
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void edit(BmsArticleEditParam bmsArticleEditParam) {
         BmsArticle bmsArticle = this.queryEntity(bmsArticleEditParam.getId());
+        checkArticleOwner(bmsArticle);
         
-        // 校验文章标题唯一性（排除自身）
         long count = this.count(new QueryWrapper<BmsArticle>().lambda()
             .eq(BmsArticle::getTitle, bmsArticleEditParam.getTitle())
             .ne(BmsArticle::getId, bmsArticleEditParam.getId()));
@@ -161,17 +251,34 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
         }
         
         this.updateById(bmsArticle);
+        
+        // 更新文章标签关联
+        deleteArticleTags(bmsArticle.getId());
+        if (StrUtil.isNotBlank(bmsArticleEditParam.getTagIds())) {
+            saveArticleTags(bmsArticle.getId(), bmsArticleEditParam.getTagIds());
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void delete(List<BmsArticleIdParam> bmsArticleIdParamList) {
-        this.removeByIds(CollStreamUtil.toList(bmsArticleIdParamList, BmsArticleIdParam::getId));
+        List<String> idList = CollStreamUtil.toList(bmsArticleIdParamList, BmsArticleIdParam::getId);
+        for (String id : idList) {
+            BmsArticle article = this.queryEntity(id);
+            checkArticleOwner(article);
+            // 删除文章标签关联
+            deleteArticleTags(id);
+        }
+        this.removeByIds(idList);
     }
 
     @Override
     public BmsArticle detail(BmsArticleIdParam bmsArticleIdParam) {
-        return this.queryEntity(bmsArticleIdParam.getId());
+        BmsArticle article = this.queryEntity(bmsArticleIdParam.getId());
+        checkArticleViewPermission(article);
+        // 查询标签名称列表用于前端显示
+        article.setTags(getArticleTagNames(article.getId()));
+        return article;
     }
 
     @Override
@@ -187,6 +294,7 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public void publish(BmsArticleIdParam bmsArticleIdParam) {
         BmsArticle bmsArticle = this.queryEntity(bmsArticleIdParam.getId());
+        checkArticleOwner(bmsArticle);
         if(BmsArticleStatusEnum.PUBLISHED.getValue().equals(bmsArticle.getStatus())) {
             throw new CommonException("文章已发布，无需重复发布");
         }
@@ -200,6 +308,7 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public void unpublish(BmsArticleIdParam bmsArticleIdParam) {
         BmsArticle bmsArticle = this.queryEntity(bmsArticleIdParam.getId());
+        checkArticleOwner(bmsArticle);
         if(BmsArticleStatusEnum.DRAFT.getValue().equals(bmsArticle.getStatus())) {
             throw new CommonException("文章未发布，无需撤回");
         }
@@ -213,6 +322,7 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public void scheduledPublish(BmsArticleIdParam bmsArticleIdParam, String scheduledTime) {
         BmsArticle bmsArticle = this.queryEntity(bmsArticleIdParam.getId());
+        checkArticleOwner(bmsArticle);
         if(BmsArticleStatusEnum.PUBLISHED.getValue().equals(bmsArticle.getStatus())) {
             throw new CommonException("文章已发布，无法设置定时发布");
         }
@@ -230,6 +340,7 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
     @Override
     public void cancelScheduled(BmsArticleIdParam bmsArticleIdParam) {
         BmsArticle bmsArticle = this.queryEntity(bmsArticleIdParam.getId());
+        checkArticleOwner(bmsArticle);
         if(!BmsArticleStatusEnum.SCHEDULED.getValue().equals(bmsArticle.getStatus())) {
             throw new CommonException("文章未设置定时发布");
         }
@@ -248,5 +359,96 @@ public class BmsArticleServiceImpl extends ServiceImpl<BmsArticleMapper, BmsArti
                 .orderByAsc(BmsArticle::getScheduledPublishTime);
         Page<BmsArticle> page = new Page<>(current, size);
         return this.page(page, queryWrapper);
+    }
+
+    @Override
+    public void incrementViewCount(String articleId) {
+        String key = CacheConstant.BMS_ARTICLE_VIEW_COUNT_PREFIX + articleId;
+        redisTemplate.opsForValue().increment(key, 1);
+        redisTemplate.expire(key, CacheConstant.CACHE_EXPIRE_1_HOUR, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void incrementLikeCount(String articleId) {
+        String key = CacheConstant.BMS_ARTICLE_LIKE_COUNT_PREFIX + articleId;
+        redisTemplate.opsForValue().increment(key, 1);
+        redisTemplate.expire(key, CacheConstant.CACHE_EXPIRE_1_HOUR, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void incrementCommentCount(String articleId) {
+        String key = CacheConstant.BMS_ARTICLE_COMMENT_COUNT_PREFIX + articleId;
+        redisTemplate.opsForValue().increment(key, 1);
+        redisTemplate.expire(key, CacheConstant.CACHE_EXPIRE_1_HOUR, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void decrementCommentCount(String articleId) {
+        String key = CacheConstant.BMS_ARTICLE_COMMENT_COUNT_PREFIX + articleId;
+        redisTemplate.opsForValue().decrement(key, 1);
+    }
+
+    @Override
+    public Integer getViewCount(String articleId) {
+        String key = CacheConstant.BMS_ARTICLE_VIEW_COUNT_PREFIX + articleId;
+        Object value = redisTemplate.opsForValue().get(key);
+        if (ObjectUtil.isNotEmpty(value)) {
+            return Integer.parseInt(value.toString());
+        }
+        BmsArticle article = this.getById(articleId);
+        if (ObjectUtil.isNotEmpty(article)) {
+            redisTemplate.opsForValue().set(key, article.getViewCount(), CacheConstant.CACHE_EXPIRE_1_HOUR, TimeUnit.SECONDS);
+            return article.getViewCount();
+        }
+        return 0;
+    }
+
+    @Override
+    public void syncCountersToDatabase() {
+        Set<String> viewKeys = redisTemplate.keys(CacheConstant.BMS_ARTICLE_VIEW_COUNT_PREFIX + "*");
+        Set<String> likeKeys = redisTemplate.keys(CacheConstant.BMS_ARTICLE_LIKE_COUNT_PREFIX + "*");
+        Set<String> commentKeys = redisTemplate.keys(CacheConstant.BMS_ARTICLE_COMMENT_COUNT_PREFIX + "*");
+
+        if (ObjectUtil.isNotEmpty(viewKeys)) {
+            for (String key : viewKeys) {
+                String articleId = key.replace(CacheConstant.BMS_ARTICLE_VIEW_COUNT_PREFIX, "");
+                Object value = redisTemplate.opsForValue().get(key);
+                if (ObjectUtil.isNotEmpty(value)) {
+                    int count = Integer.parseInt(value.toString());
+                    this.update(new LambdaUpdateWrapper<BmsArticle>()
+                        .eq(BmsArticle::getId, articleId)
+                        .set(BmsArticle::getViewCount, count));
+                    redisTemplate.delete(key);
+                }
+            }
+        }
+
+        if (ObjectUtil.isNotEmpty(likeKeys)) {
+            for (String key : likeKeys) {
+                String articleId = key.replace(CacheConstant.BMS_ARTICLE_LIKE_COUNT_PREFIX, "");
+                Object value = redisTemplate.opsForValue().get(key);
+                if (ObjectUtil.isNotEmpty(value)) {
+                    int count = Integer.parseInt(value.toString());
+                    this.update(new LambdaUpdateWrapper<BmsArticle>()
+                        .eq(BmsArticle::getId, articleId)
+                        .set(BmsArticle::getLikeCount, count));
+                    redisTemplate.delete(key);
+                }
+            }
+        }
+
+        if (ObjectUtil.isNotEmpty(commentKeys)) {
+            for (String key : commentKeys) {
+                String articleId = key.replace(CacheConstant.BMS_ARTICLE_COMMENT_COUNT_PREFIX, "");
+                Object value = redisTemplate.opsForValue().get(key);
+                if (ObjectUtil.isNotEmpty(value)) {
+                    int count = Integer.parseInt(value.toString());
+                    this.update(new LambdaUpdateWrapper<BmsArticle>()
+                        .eq(BmsArticle::getId, articleId)
+                        .set(BmsArticle::getCommentCount, count));
+                    redisTemplate.delete(key);
+                }
+            }
+        }
     }
 }

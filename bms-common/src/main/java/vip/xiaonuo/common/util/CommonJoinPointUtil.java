@@ -15,6 +15,7 @@ package vip.xiaonuo.common.util;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +36,7 @@ import java.util.Map;
 public class CommonJoinPointUtil {
 
     /**
-     * 获取切面的参数JSON
+     * 获取切面的参数JSON（已集成敏感字段脱敏）
      *
      * @author xuyuxiang
      * @date 2022/9/2 15:51
@@ -53,19 +54,67 @@ public class CommonJoinPointUtil {
                     try {
                         JSONObject jsonObject = JSONUtil.parseObj(args[i]);
                         if(ObjectUtil.isNotEmpty(jsonObject)) {
-                            map.put(parameterNames[i], jsonObject);
+                            // 对JSON参数进行脱敏处理
+                            map.put(parameterNames[i], desensitizeParam(jsonObject));
                         } else {
-                            map.put(parameterNames[i], JSONUtil.parseArray(args[i]));
+                            map.put(parameterNames[i], desensitizeParam(JSONUtil.parseArray(args[i])));
                         }
                     } catch (Exception e) {
                         map.put(parameterNames[i], null);
                     }
                 } else {
-                    map.put(parameterNames[i], JSONUtil.toJsonStr(args[i]));
+                    // 对非JSON参数进行脱敏处理
+                    map.put(parameterNames[i], desensitizeParamValue(parameterNames[i], args[i]));
                 }
             }
         }
         return JSONUtil.toJsonStr(map);
+    }
+
+    /**
+     * 对JSONObject参数进行脱敏处理
+     */
+    private static JSONObject desensitizeParam(JSONObject jsonObject) {
+        JSONObject result = new JSONObject();
+        for (String key : jsonObject.keySet()) {
+            Object value = jsonObject.get(key);
+            result.put(key, desensitizeParamValue(key, value));
+        }
+        return result;
+    }
+
+    /**
+     * 对JSONArray参数进行脱敏处理
+     */
+    private static JSONArray desensitizeParam(JSONArray jsonArray) {
+        JSONArray result = new JSONArray();
+        for (Object item : jsonArray) {
+            if (item instanceof JSONObject) {
+                result.add(desensitizeParam((JSONObject) item));
+            } else {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 对单个参数值进行脱敏处理
+     */
+    private static Object desensitizeParamValue(String paramName, Object value) {
+        if (CommonDesensitizeUtil.isSensitiveField(paramName)) {
+            return "******";
+        }
+        if (value instanceof String && JSONUtil.isTypeJSON((String) value)) {
+            return CommonDesensitizeUtil.desensitizeJson((String) value);
+        }
+        if (value instanceof JSONObject) {
+            return desensitizeParam((JSONObject) value);
+        }
+        if (value instanceof JSONArray) {
+            return desensitizeParam((JSONArray) value);
+        }
+        return value;
     }
 
     /**

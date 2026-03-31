@@ -131,4 +131,45 @@ public interface BmsArticleService extends IService<BmsArticle> {
      * @date 2026/03/26
      */
     Page<BmsArticle> scheduledList(Integer current, Integer size);
+
+    /**
+     * 增加文章浏览量（使用Redis计数器）
+     *
+     * @param articleId 文章ID
+     */
+    void incrementViewCount(String articleId);
+
+    /**
+     * 增加文章点赞量（使用Redis计数器）
+     *
+     * @param articleId 文章ID
+     */
+    void incrementLikeCount(String articleId);
+
+    /**
+     * 增加文章评论数（使用Redis计数器）
+     *
+     * @param articleId 文章ID
+     */
+    void incrementCommentCount(String articleId);
+
+    /**
+     * 减少文章评论数（使用Redis计数器）
+     *
+     * @param articleId 文章ID
+     */
+    void decrementCommentCount(String articleId);
+
+    /**
+     * 获取文章浏览量（优先从Redis获取）
+     *
+     * @param articleId 文章ID
+     * @return 浏览量
+     */
+    Integer getViewCount(String articleId);
+
+    /**
+     * 同步Redis计数器到数据库
+     */
+    void syncCountersToDatabase();
 }

@@ -17,10 +17,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.Setter;
+import vip.xiaonuo.common.util.CommonXssUtil;
 
 @Getter
-@Setter
 public class BmsCommentEditParam {
 
     @Schema(description = "主键ID", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -48,4 +47,30 @@ public class BmsCommentEditParam {
 
     @Schema(description = "状态")
     private String status;
+
+    // XSS过滤的setter方法
+    public void setNickname(String nickname) {
+        this.nickname = CommonXssUtil.filterNickname(nickname);
+    }
+
+    public void setEmail(String email) {
+        this.email = CommonXssUtil.filterEmail(email);
+    }
+
+    public void setWebsite(String website) {
+        this.website = CommonXssUtil.filterWebsite(website);
+    }
+
+    public void setContent(String content) {
+        this.content = CommonXssUtil.filterPlainText(content);
+    }
+
+    // 其他字段的普通setter
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
